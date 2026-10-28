@@ -1,15 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { LandingView } from '@/components/landing/LandingView';
-import { MotionTrackStudio } from '@/components/editor/MotionTrackStudio';
 
-export default function Home() {
-  const [inStudio, setInStudio] = useState<boolean>(false);
+export default function HomePage() {
+  const router = useRouter();
 
-  if (inStudio) {
-    return <MotionTrackStudio />;
-  }
+  const handleOpenStudio = () => {
+    router.push('/dashboard');
+  };
 
-  return <LandingView onOpenStudio={() => setInStudio(true)} />;
+  return <LandingView onOpenStudio={handleOpenStudio} />;
 }

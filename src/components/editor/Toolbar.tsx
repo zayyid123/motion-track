@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Play,
   Pause,
@@ -77,14 +78,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <header className="h-14 border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between z-20 shrink-0 w-full relative">
         {/* Brand & Project Name */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="flex items-center gap-1.5 sm:gap-2 pr-1.5 sm:pr-3 border-r border-slate-200">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 sm:gap-2 pr-1.5 sm:pr-3 border-r border-slate-200 hover:opacity-80 transition cursor-pointer"
+            title="Back to Landing Page"
+          >
             <div className="w-8 h-8 rounded-xl bg-[#ff6b35] text-white flex items-center justify-center font-mono font-bold text-xs sm:text-sm shadow-sm shadow-orange-200 shrink-0">
               MT
             </div>
             <span className="font-mono font-bold tracking-tight text-slate-900 hidden sm:inline">
               motion-track
             </span>
-          </div>
+          </Link>
 
           <input
             type="text"
