@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Download, Film, Sparkles, Loader2, CheckCircle } from 'lucide-react';
-import { StickerProject } from '@/types/sticker';
+import { X, Film, Sparkles, Loader2, CheckCircle, Download } from 'lucide-react';
+import { Icon, Palette } from '@/lib/funIsometric';
 import { exportGIF, exportVideo, ExportProgress } from '@/lib/exporter';
 
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  project: StickerProject;
+  icon: Icon;
+  palette: Palette;
 }
 
 type ExportFormat = 'gif' | 'mp4' | 'mov';
@@ -16,10 +17,11 @@ type ExportFormat = 'gif' | 'mp4' | 'mov';
 export const ExportModal: React.FC<ExportModalProps> = ({
   isOpen,
   onClose,
-  project,
+  icon,
+  palette,
 }) => {
-  const [format, setFormat] = useState<ExportFormat>('gif');
-  const [resolution, setResolution] = useState<number>(400);
+  const [format, setFormat] = useState<ExportFormat>('mp4');
+  const [resolution, setResolution] = useState<number>(1080); // Default Full HD 1080p
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState<ExportProgress | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
@@ -33,13 +35,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
     try {
       if (format === 'gif') {
-        const gifBase64 = await exportGIF(project, resolution, resolution, (p) => {
+        const gifBase64 = await exportGIF(icon, palette, resolution, resolution, (p) => {
           setProgress(p);
         });
         setDownloadUrl(gifBase64);
       } else {
         const videoBlob = await exportVideo(
-          project,
+          icon,
+          palette,
           format,
           resolution,
           resolution,
@@ -52,14 +55,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       }
     } catch (err) {
       console.error(err);
-      alert('Gagal mengekspor animasi. Silakan coba kembali.');
+      alert('Gagal mengekspor stiker animasi.');
     } finally {
       setIsExporting(false);
     }
   };
 
   const getFilename = () => {
-    const cleanName = (project.name || 'sticker').toLowerCase().replace(/\s+/g, '-');
+    const cleanName = (icon.name || 'sticker').toLowerCase().replace(/\s+/g, '-');
     return `${cleanName}.${format}`;
   };
 
@@ -84,13 +87,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         {/* Content */}
         <div className="p-5 space-y-4">
-          <p className="text-slate-700 text-xs font-sans leading-relaxed font-medium">
+          <p className="text-slate-500 text-[11px] font-sans leading-relaxed">
             Pilih format video animasi yang diinginkan. Hasil ekspor merender animasi loop stiker isometrik bersih tanpa elemen editor.
           </p>
 
           {/* Format Selection */}
           <div>
-            <label className="text-slate-900 font-bold mb-1.5 block">Format Animasi</label>
+            <label className="text-slate-700 font-semibold mb-1.5 block">Format Animasi</label>
             <div className="grid grid-cols-3 gap-2">
               {(['gif', 'mp4', 'mov'] as ExportFormat[]).map((fmt) => (
                 <button
@@ -103,36 +106,47 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   className={`py-2 px-3 rounded-xl border text-center font-bold uppercase transition ${
                     format === fmt
                       ? 'bg-orange-50 border-[#ff6b35] text-orange-700 shadow-sm'
-                      : 'bg-slate-50 border-slate-300 text-slate-800 hover:bg-slate-100'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
                   .{fmt}
                 </button>
               ))}
             </div>
-            <div className="text-[11px] text-slate-600 font-medium mt-1.5">
+            <div className="text-[10px] text-slate-400 mt-1.5">
               {format === 'gif' && 'GIF: Animasi loop ringan dengan transparansi web.'}
               {format === 'mp4' && 'MP4: Kompatibilitas tinggi (H.264) untuk sosmed & web.'}
-              {format === 'mov' && 'MOV: QuickTime video format untuk aplikasi editor pro.'}
+              {format === 'mov' && 'MOV: QuickTime format untuk software editing video pro.'}
             </div>
           </div>
 
           {/* Resolution Selection */}
           <div>
-            <label className="text-slate-900 font-bold mb-1.5 block">Resolusi Output</label>
-            <div className="grid grid-cols-3 gap-2">
-              {[300, 400, 500].map((res) => (
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-slate-800 font-semibold block">Resolusi Kualitas Tinggi</label>
+              <span className="text-[10px] text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded">
+                Crisp 60 FPS Engine
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { res: 500, label: 'SD (500p)' },
+                { res: 720, label: 'HD (720p)' },
+                { res: 1080, label: 'FHD (1080p)' },
+                { res: 1440, label: '2K QHD' },
+              ].map(({ res, label }) => (
                 <button
                   key={res}
                   type="button"
                   onClick={() => setResolution(res)}
-                  className={`py-2 px-3 rounded-xl border text-center transition ${
+                  className={`py-2 px-1 rounded-xl border text-center transition ${
                     resolution === res
-                      ? 'bg-slate-900 border-slate-900 text-white font-bold'
-                      : 'bg-slate-50 border-slate-300 text-slate-800 font-semibold hover:bg-slate-100'
+                      ? 'bg-slate-900 border-slate-900 text-white font-bold shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                   }`}
                 >
-                  {res}x{res} px
+                  <div className="font-bold text-[11px]">{res}px</div>
+                  <div className="text-[9px] opacity-75">{label.split(' ')[0]}</div>
                 </button>
               ))}
             </div>

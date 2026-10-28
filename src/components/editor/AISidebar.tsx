@@ -2,21 +2,25 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Sparkles, AlertCircle, Bot, User } from 'lucide-react';
-import { AISettings, ChatMessage, StickerProject } from '@/types/sticker';
+import { AISettings, ChatMessage } from '@/types/sticker';
 import { sendChatMessage } from '@/lib/aiClient';
+import { Icon, Palette } from '@/lib/funIsometric';
 
 interface AISidebarProps {
   isOpen: boolean;
   onClose: () => void;
   settings: AISettings;
   onOpenSettings: () => void;
-  project: StickerProject;
+  icon: Icon;
+  palette: Palette;
+  selectedLayerId: string | null;
 }
 
 const QUICK_ACTIONS = [
-  '🎨 Sarankan palet pastel cyberpunk',
-  '💫 Ide motion seru untuk pensil',
-  '📐 Aturan tebal outline & slab isometrik',
+  '🎨 Sarankan kombinasi role warna untuk layer ini',
+  '💫 Ide motion preset yang cocok untuk stiker ini',
+  '📁 Jelaskan cara kerja Grouping & Motion Sync',
+  '📐 Berapa tebal outline & depth isometrik terbaik?',
 ];
 
 export const AISidebar: React.FC<AISidebarProps> = ({
@@ -24,7 +28,9 @@ export const AISidebar: React.FC<AISidebarProps> = ({
   onClose,
   settings,
   onOpenSettings,
-  project,
+  icon,
+  palette,
+  selectedLayerId,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
@@ -69,7 +75,11 @@ export const AISidebar: React.FC<AISidebarProps> = ({
     setIsLoading(true);
 
     try {
-      const reply = await sendChatMessage(messages, text, settings, project);
+      const reply = await sendChatMessage(messages, text, settings, {
+        icon,
+        palette,
+        selectedLayerId,
+      });
       msgCounterRef.current += 1;
       const aiMsg: ChatMessage = {
         id: `msg-${msgCounterRef.current}`,
@@ -89,7 +99,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
   if (!isOpen) return null;
 
   return (
-    <aside className="fixed right-0 top-14 bottom-0 w-84 sm:w-96 bg-white/95 backdrop-blur-xl border-l border-slate-200/80 shadow-2xl z-30 flex flex-col select-none">
+    <aside className="fixed right-0 top-14 bottom-0 w-84 sm:w-96 bg-white/95 backdrop-blur-xl border-l border-slate-200/80 shadow-2xl z-40 flex flex-col select-none">
       {/* Header */}
       <div className="p-3.5 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
         <div className="flex items-center gap-2">

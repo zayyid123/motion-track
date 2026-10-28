@@ -8,12 +8,13 @@ import {
   Sparkles,
   ArrowRight,
   Layers,
-  Palette,
+  Palette as PaletteIcon,
   Film,
   Bot,
 } from 'lucide-react';
-import { renderSticker } from '@/lib/renderer';
-import { PADLOCK_HERO_PROJECT } from '@/data/sampleStickers';
+import { draw } from '@/lib/funIsometric/fun';
+import { padlock } from '@/lib/funIsometric/icons';
+import { PALETTES } from '@/lib/funIsometric/fun';
 
 interface LandingViewProps {
   onOpenStudio: () => void;
@@ -41,14 +42,14 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
     let animId: number;
 
     const render = () => {
-      renderSticker(ctx, PADLOCK_HERO_PROJECT, {
-        frame,
-        totalFrames: 120,
-        width: 440,
-        height: 440,
-        showHelpers: false,
-      });
-      frame = (frame + 1) % 120;
+      ctx.clearRect(0, 0, 440, 440);
+      ctx.save();
+      const scale = 440 / 500;
+      ctx.scale(scale, scale);
+      draw(ctx, padlock, frame, PALETTES.slush);
+      ctx.restore();
+
+      frame = (frame + 1) % (padlock.frames || 130);
       animId = requestAnimationFrame(render);
     };
 
@@ -173,7 +174,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
 
           <div className="p-6 rounded-2xl bg-white border border-slate-300 shadow-xs space-y-2">
             <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
-              <Palette className="w-4 h-4" />
+              <PaletteIcon className="w-4 h-4" />
             </div>
             <h3 className="font-mono font-bold text-sm text-slate-900">Warm Orange & Blue</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium">

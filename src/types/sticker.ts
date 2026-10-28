@@ -4,12 +4,31 @@ export type MotionPresetType =
   | 'hop'
   | 'bounce'
   | 'wiggle'
+  | 'toss'
+  | 'jolt'
+  | 'clasp'
+  | 'wobble'
   | 'drift'
   | 'twist'
+  | 'press'
+  | 'sway'
   | 'float'
-  | 'twinkle';
+  | 'bob'
+  | 'twinkle'
+  | 'glint'
+  | 'sparkle';
 
-export type RoleColorKey = 'main' | 'gold' | 'tint' | 'ok' | 'hot' | 'deep' | 'paper' | 'ink';
+export type RoleColorKey =
+  | 'main'
+  | 'gold'
+  | 'tint'
+  | 'ok'
+  | 'hot'
+  | 'deep'
+  | 'white'
+  | 'grey'
+  | 'paper'
+  | 'ink';
 
 export interface Palette {
   id: string;

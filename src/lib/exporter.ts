@@ -1,39 +1,38 @@
-import { StickerProject } from '@/types/sticker';
-import { renderSticker } from './renderer';
+import { Icon, Palette } from '@/lib/funIsometric';
+import { draw } from '@/lib/funIsometric/fun';
 import gifshot from 'gifshot';
 
 export interface ExportProgress {
   stage: 'rendering' | 'encoding' | 'ready';
-  progress: number; // 0..100
+  progress: number;
 }
 
-/**
- * Capture frame sequence from canvas offscreen
- */
-export async function captureFrames(
-  project: StickerProject,
+export async function captureIconFrames(
+  icon: Icon,
   width: number,
   height: number,
+  palette: Palette,
   fps: number = 30,
   durationSec: number = 2
 ): Promise<HTMLCanvasElement[]> {
-  const totalFrames = Math.floor(fps * durationSec);
+  const totalFrames = Math.min(icon.frames, Math.floor(fps * durationSec));
   const canvases: HTMLCanvasElement[] = [];
 
   for (let f = 0; f < totalFrames; f++) {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) continue;
 
-    renderSticker(ctx, project, {
-      frame: f,
-      totalFrames,
-      width,
-      height,
-      showHelpers: false,
-    });
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    ctx.save();
+    const scale = width / (icon.size ?? 500);
+    ctx.scale(scale, scale);
+    draw(ctx, icon, f, palette);
+    ctx.restore();
 
     canvases.push(canvas);
   }
@@ -41,21 +40,19 @@ export async function captureFrames(
   return canvases;
 }
 
-/**
- * Export animated GIF
- */
 export async function exportGIF(
-  project: StickerProject,
-  width: number = 400,
-  height: number = 400,
+  icon: Icon,
+  palette: Palette,
+  width: number = 600,
+  height: number = 600,
   onProgress?: (p: ExportProgress) => void
 ): Promise<string> {
   onProgress?.({ stage: 'rendering', progress: 10 });
-  const fps = 25;
-  const duration = 2; // 2s loop
-  const canvases = await captureFrames(project, width, height, fps, duration);
+  const fps = 30; // 30 FPS for fluid high-def GIF
+  const duration = (icon.frames || 180) / 60;
+  const canvases = await captureIconFrames(icon, width, height, palette, fps, duration);
 
-  onProgress?.({ stage: 'encoding', progress: 40 });
+  onProgress?.({ stage: 'encoding', progress: 35 });
 
   return new Promise((resolve, reject) => {
     gifshot.createGIF(
@@ -64,18 +61,19 @@ export async function exportGIF(
         gifWidth: width,
         gifHeight: height,
         interval: 1 / fps,
-        numWorkers: 2,
+        sampleInterval: 5, // Higher sampling precision for color gradient accuracy
+        numWorkers: 4,
         progressCallback: (captureProgress: number) => {
           onProgress?.({
             stage: 'encoding',
-            progress: Math.floor(40 + captureProgress * 55),
+            progress: Math.floor(35 + captureProgress * 60),
           });
         },
       },
       (obj) => {
         if (!obj.error) {
           onProgress?.({ stage: 'ready', progress: 100 });
-          resolve(obj.image); // base64 gif url
+          resolve(obj.image);
         } else {
           reject(new Error(obj.errorMsg || 'Failed to generate GIF'));
         }
@@ -84,30 +82,29 @@ export async function exportGIF(
   });
 }
 
-/**
- * Export MP4 or MOV video using WebCodecs/MediaRecorder with high quality
- */
 export async function exportVideo(
-  project: StickerProject,
+  icon: Icon,
+  palette: Palette,
   format: 'mp4' | 'mov',
-  width: number = 500,
-  height: number = 500,
+  width: number = 1080,
+  height: number = 1080,
   onProgress?: (p: ExportProgress) => void
 ): Promise<Blob> {
   onProgress?.({ stage: 'rendering', progress: 15 });
-  const fps = 30;
-  const duration = 2.5;
-  const totalFrames = Math.floor(fps * duration);
+  const fps = 60; // 60 FPS Ultra Smooth
+  const totalFrames = icon.frames || 180;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d', { alpha: format === 'mov' })!;
 
-  // Stream from canvas
+  // Smooth image scaling settings
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
   const stream = canvas.captureStream(fps);
 
-  // Determine mimeType
   let mimeType = 'video/webm;codecs=vp9';
   if (format === 'mp4' && MediaRecorder.isTypeSupported('video/mp4')) {
     mimeType = 'video/mp4';
@@ -117,9 +114,10 @@ export async function exportVideo(
     mimeType = 'video/webm';
   }
 
+  // High bitrate 24 Mbps for crisp, crystal-clear 1080p/2K renders
   const mediaRecorder = new MediaRecorder(stream, {
     mimeType,
-    videoBitsPerSecond: 8000000, // 8 Mbps
+    videoBitsPerSecond: 24000000,
   });
 
   const chunks: Blob[] = [];
@@ -130,30 +128,25 @@ export async function exportVideo(
   return new Promise((resolve, reject) => {
     mediaRecorder.onstop = () => {
       onProgress?.({ stage: 'ready', progress: 100 });
-      // Pack into blob with appropriate target mime
       const finalType = format === 'mp4' ? 'video/mp4' : 'video/quicktime';
       const blob = new Blob(chunks, { type: finalType });
       resolve(blob);
     };
 
-    mediaRecorder.onerror = (err) => {
-      reject(err);
-    };
+    mediaRecorder.onerror = (err) => reject(err);
 
     mediaRecorder.start();
 
-    // Render loop synced to recorder
     let frame = 0;
     const interval = 1000 / fps;
 
     const intervalId = setInterval(() => {
-      renderSticker(ctx, project, {
-        frame,
-        totalFrames,
-        width,
-        height,
-        showHelpers: false,
-      });
+      ctx.clearRect(0, 0, width, height);
+      ctx.save();
+      const scale = width / (icon.size ?? 500);
+      ctx.scale(scale, scale);
+      draw(ctx, icon, frame, palette);
+      ctx.restore();
 
       frame++;
       const currentPct = Math.min(95, Math.floor(15 + (frame / totalFrames) * 75));

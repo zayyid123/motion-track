@@ -1,152 +1,127 @@
 'use client';
 
 import React from 'react';
-import { Palette as PaletteIcon, Activity, Sliders, Box, Paintbrush } from 'lucide-react';
-import {
-  StickerProject,
-  StickerLayer,
-  MotionPresetType,
-  RoleColorKey,
-} from '@/types/sticker';
-import { PALETTES } from '@/types/palettes';
-import { resolveColor } from '@/lib/renderer';
+import { Palette as PaletteIcon, Activity, Box, Sliders } from 'lucide-react';
+import { Palette, PALETTES, ACCENTS, Swatch, Layer } from '@/lib/funIsometric';
 
 interface RightSidebarProps {
-  project: StickerProject;
-  selectedLayer: StickerLayer | null;
-  onUpdateLayer: (id: string, updates: Partial<StickerLayer>) => void;
-  onUpdateProjectMotion: (motion: StickerProject['motion']) => void;
-  onPaletteChange: (paletteId: string) => void;
-  onUpdateRoleColor: (role: RoleColorKey, hex: string) => void;
+  layers: ReadonlyArray<Layer>;
+  palette: Palette;
+  selectedLayer: Layer | null;
+  onUpdateLayer: (id: string, updates: Partial<Layer>) => void;
+  onUpdateLayerShapeFill: (id: string, role: Swatch) => void;
+  onUpdateLayerShapeDepth: (id: string, depth: number) => void;
+  onCreateGroup: () => void;
+  onSetLayerGroup: (layerId: string, groupId: string | undefined) => void;
+  onApplyMotionToLayer: (id: string, motionPreset: string) => void;
+  onPaletteChange: (palKey: keyof typeof PALETTES) => void;
+  onUpdatePaletteColor: (role: keyof Palette, hex: string) => void;
+  outlineWidth: number;
+  onUpdateOutlineWidth: (w: number) => void;
 }
 
-const MOTION_PRESETS: { id: MotionPresetType; name: string; desc: string }[] = [
-  { id: 'wiggle', name: 'Wiggle', desc: 'Scribble / quick rocking' },
-  { id: 'hop', name: 'Hop', desc: 'Snappy jump with settle' },
-  { id: 'bounce', name: 'Bounce', desc: 'Springy rebound' },
-  { id: 'drift', name: 'Drift', desc: 'Lazy banking figure-8' },
-  { id: 'twist', name: 'Twist', desc: 'Sharp twist & hold' },
-  { id: 'float', name: 'Float', desc: 'Gentle airy hover' },
-  { id: 'twinkle', name: 'Twinkle', desc: 'Pulsing sparkle pop' },
-];
-
-const COLOR_ROLES: { role: RoleColorKey; label: string }[] = [
-  { role: 'main', label: 'Main (Body)' },
-  { role: 'gold', label: 'Gold (Accent)' },
-  { role: 'tint', label: 'Tint (Soft fill)' },
-  { role: 'ok', label: 'Ok (Green)' },
-  { role: 'hot', label: 'Hot (Pink/Pop)' },
-  { role: 'deep', label: 'Deep (Side slab)' },
-  { role: 'paper', label: 'Paper (White)' },
-  { role: 'ink', label: 'Ink (Outline)' },
+const MOTION_PRESETS = [
+  { id: 'none', name: 'None (Still)', desc: 'No animation' },
+  { id: 'wiggle', name: 'Wiggle', desc: 'Rocking taps' },
+  { id: 'hop', name: 'Hop', desc: 'Jump & slam' },
+  { id: 'bounce', name: 'Bounce', desc: 'Spring rebound' },
+  { id: 'clasp', name: 'Clasp', desc: 'Lift & slam' },
+  { id: 'shackle', name: 'Shackle', desc: 'Spring open/shut' },
+  { id: 'drift', name: 'Drift', desc: 'Figure-8 hover' },
+  { id: 'twist', name: 'Twist', desc: 'Sharp twist' },
+  { id: 'wobble', name: 'Wobble', desc: 'Organic rock' },
+  { id: 'look', name: 'Look', desc: 'Glance & dart' },
+  { id: 'sparkle', name: 'Sparkle', desc: 'Pop & turn' },
+  { id: 'twinkle', name: 'Twinkle', desc: 'Star pop' },
+  { id: 'glint', name: 'Glint', desc: 'Glare drift' },
+  { id: 'sway', name: 'Sway', desc: 'Gentle lean' },
+  { id: 'float', name: 'Float', desc: 'Airy hover' },
+  { id: 'bob', name: 'Bob', desc: 'Small bob' },
 ];
 
 export const RightSidebar: React.FC<RightSidebarProps> = ({
-  project,
+  layers,
+  palette,
   selectedLayer,
   onUpdateLayer,
-  onUpdateProjectMotion,
+  onUpdateLayerShapeFill,
+  onUpdateLayerShapeDepth,
+  onCreateGroup,
+  onSetLayerGroup,
+  onApplyMotionToLayer,
   onPaletteChange,
-  onUpdateRoleColor,
+  onUpdatePaletteColor,
+  outlineWidth,
+  onUpdateOutlineWidth,
 }) => {
-  const currentPalette = PALETTES[project.paletteId] || PALETTES.riso;
+  const currentPos = Array.isArray(selectedLayer?.p) && typeof selectedLayer?.p[0] === 'number'
+    ? (selectedLayer.p as unknown as readonly [number, number])
+    : [250, 250];
 
-  const currentFillHex = selectedLayer
-    ? selectedLayer.customHex || resolveColor(selectedLayer.fillRole, project)
-    : '#ff6b35';
-  const currentSideHex = selectedLayer
-    ? selectedLayer.customSideHex ||
-      resolveColor(selectedLayer.sideColorRole || 'deep', project)
-    : '#1e3a8a';
-  const currentOutlineHex = selectedLayer
-    ? selectedLayer.customOutlineHex ||
-      resolveColor(selectedLayer.outlineRole || 'ink', project, '#111827')
-    : '#111827';
+  const currentLayerMotion = selectedLayer?.motionPreset || (selectedLayer?.m ? 'custom' : 'none');
 
   return (
-    <aside className="w-80 border-l border-slate-200/80 bg-white/95 backdrop-blur-md flex flex-col h-[calc(100vh-3.5rem)] overflow-y-auto select-none">
-      {/* Motion Engine Section */}
+    <aside className="w-80 border-l border-slate-200/80 bg-white/95 backdrop-blur-md flex flex-col h-full overflow-y-auto select-none">
+      {/* Motion Engine Section - PER LAYER */}
       <div className="p-4 border-b border-slate-200/70">
-        <div className="flex items-center gap-1.5 mb-3">
-          <Activity className="w-4 h-4 text-[#ff6b35]" />
-          <h3 className="font-mono text-xs uppercase tracking-wider font-bold text-slate-800">
-            Motion Keyframes
-          </h3>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Activity className="w-4 h-4 text-[#ff6b35]" />
+            <h3 className="font-mono text-xs uppercase tracking-wider font-bold text-slate-800">
+              Layer Motion Preset
+            </h3>
+          </div>
+          {selectedLayer && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-orange-100 text-[#ff6b35] font-semibold">
+              {currentLayerMotion}
+            </span>
+          )}
         </div>
 
-        {/* Preset Selector */}
-        <div className="space-y-1.5 mb-3">
-          <label className="text-[11px] font-mono text-slate-700 block font-bold uppercase">
-            Motion Preset
-          </label>
-          <div className="grid grid-cols-2 gap-1.5">
-            {MOTION_PRESETS.map((m) => (
-              <button
-                key={m.id}
-                onClick={() =>
-                  onUpdateProjectMotion({
-                    ...project.motion,
-                    preset: m.id,
-                  })
-                }
-                className={`px-2.5 py-1.5 rounded-xl text-left border text-xs font-mono transition ${
-                  project.motion.preset === m.id
-                    ? 'bg-orange-50 border-[#ff6b35] text-slate-900 font-bold shadow-sm'
-                    : 'bg-slate-50 border-slate-300 text-slate-800 hover:bg-slate-100 font-medium'
-                }`}
-              >
-                <div>{m.name}</div>
-                <div className="text-[9px] text-slate-600 truncate font-medium">{m.desc}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Speed & Intensity Sliders */}
-        <div className="space-y-2.5 pt-1">
-          <div>
-            <div className="flex justify-between text-[11px] font-mono text-slate-700 mb-1">
-              <span className="font-bold">SPEED PACE</span>
-              <span className="font-bold text-slate-900">{project.motion.speed}x</span>
+        {selectedLayer ? (
+          <>
+            <p className="text-[10px] text-slate-500 font-mono mb-2">
+              Preset gerakan aktif untuk: <strong className="text-slate-800">{selectedLayer.name || selectedLayer.id}</strong>
+            </p>
+            <div className="grid grid-cols-2 gap-1.5 mb-3 max-h-48 overflow-y-auto p-0.5">
+              {MOTION_PRESETS.map((m) => {
+                const isSelected = currentLayerMotion === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => onApplyMotionToLayer(selectedLayer.id!, m.id)}
+                    className={`px-2 py-1.5 rounded-xl border text-left text-xs font-mono transition ${
+                      isSelected
+                        ? 'bg-orange-50 border-[#ff6b35] text-slate-900 font-bold shadow-xs ring-1 ring-[#ff6b35]'
+                        : 'border-slate-200 hover:border-orange-200 hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <div className="truncate">{m.name}</div>
+                    <div className="text-[9px] text-slate-400 font-normal truncate">{m.desc}</div>
+                  </button>
+                );
+              })}
             </div>
-            <input
-              type="range"
-              min="0.4"
-              max="2.0"
-              step="0.1"
-              value={project.motion.speed}
-              onChange={(e) =>
-                onUpdateProjectMotion({
-                  ...project.motion,
-                  speed: parseFloat(e.target.value),
-                })
-              }
-              className="w-full accent-[#ff6b35] h-2 bg-slate-200 rounded-lg cursor-pointer"
-            />
+          </>
+        ) : (
+          <div className="text-center py-4 text-slate-400 font-mono text-xs">
+            Pilih layer di kanvas untuk mengatur motion preset layer tersebut.
           </div>
+        )}
 
-          <div>
-            <div className="flex justify-between text-[11px] font-mono text-slate-700 mb-1">
-              <span className="font-bold">MOTION INTENSITY</span>
-              <span className="font-bold text-slate-900">
-                {Math.round(project.motion.intensity * 100)}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0.2"
-              max="2.0"
-              step="0.1"
-              value={project.motion.intensity}
-              onChange={(e) =>
-                onUpdateProjectMotion({
-                  ...project.motion,
-                  intensity: parseFloat(e.target.value),
-                })
-              }
-              className="w-full accent-[#ff6b35] h-2 bg-slate-200 rounded-lg cursor-pointer"
-            />
+        <div className="pt-2 border-t border-slate-100">
+          <div className="flex justify-between text-[11px] font-mono text-slate-500 mb-1">
+            <span>INK OUTLINE WIDTH</span>
+            <span className="font-semibold text-slate-800">{outlineWidth}px</span>
           </div>
+          <input
+            type="range"
+            min="2"
+            max="10"
+            value={outlineWidth}
+            onChange={(e) => onUpdateOutlineWidth(parseInt(e.target.value) || 5)}
+            className="w-full accent-[#ff6b35] h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+          />
         </div>
       </div>
 
@@ -159,45 +134,37 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
           </h3>
         </div>
 
-        {/* Palette selector buttons */}
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {Object.values(PALETTES).map((pal) => (
+          {(Object.keys(PALETTES) as Array<keyof typeof PALETTES>).map((key) => (
             <button
-              key={pal.id}
-              onClick={() => onPaletteChange(pal.id)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition border ${
-                project.paletteId === pal.id
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                  : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
-              }`}
+              key={key}
+              onClick={() => onPaletteChange(key)}
+              className="px-2.5 py-1 rounded-lg text-xs font-mono transition border capitalize bg-white text-slate-600 hover:bg-slate-50 border-slate-200"
             >
-              {pal.name.split(' ')[0]}
+              {key}
             </button>
           ))}
         </div>
 
-        {/* Palette Swatches */}
+        {/* Swatches */}
         <div className="grid grid-cols-4 gap-2">
-          {COLOR_ROLES.map(({ role, label }) => {
-            const hex =
-              (project.customPalette && project.customPalette[role]) ||
-              currentPalette.colors[role];
-
+          {ACCENTS.map((role) => {
+            const hex = palette[role];
             return (
               <div key={role} className="flex flex-col items-center gap-1">
                 <label
                   className="w-8 h-8 rounded-xl border border-slate-300 shadow-sm cursor-pointer relative overflow-hidden flex items-center justify-center transition hover:scale-105"
                   style={{ backgroundColor: hex }}
-                  title={`${label}: ${hex}`}
+                  title={`${role}: ${hex}`}
                 >
                   <input
                     type="color"
                     value={hex}
-                    onChange={(e) => onUpdateRoleColor(role, e.target.value)}
+                    onChange={(e) => onUpdatePaletteColor(role, e.target.value)}
                     className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
                   />
                 </label>
-                <span className="text-[10px] font-mono text-slate-700 font-bold uppercase tracking-tight">
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-tight">
                   {role}
                 </span>
               </div>
@@ -215,311 +182,257 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
           </h3>
         </div>
 
-        {selectedLayer ? (
+        {selectedLayer && selectedLayer.id ? (
           <div className="space-y-3 font-mono text-xs">
             <div>
-              <label className="text-[11px] text-slate-700 font-bold block mb-1">Layer Name</label>
+              <label className="text-[11px] text-slate-400 block mb-1">Layer Name / ID</label>
               <input
                 type="text"
-                value={selectedLayer.name}
-                placeholder="Nama Layer..."
+                value={selectedLayer.name || selectedLayer.id}
                 onChange={(e) =>
-                  onUpdateLayer(selectedLayer.id, { name: e.target.value })
+                  onUpdateLayer(selectedLayer.id!, { name: e.target.value })
                 }
-                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold placeholder:text-slate-500"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-slate-50"
               />
             </div>
 
             {/* Position X / Y */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[11px] text-slate-700 font-bold block mb-1">Pos X</label>
+                <label className="text-[11px] text-slate-400 block mb-1">Position X</label>
                 <input
                   type="number"
-                  value={selectedLayer.x}
+                  value={currentPos[0]}
                   onChange={(e) =>
-                    onUpdateLayer(selectedLayer.id, { x: parseInt(e.target.value) || 0 })
+                    onUpdateLayer(selectedLayer.id!, {
+                      p: [parseInt(e.target.value) || 0, currentPos[1]],
+                    })
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-slate-50"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-700 font-bold block mb-1">Pos Y</label>
+                <label className="text-[11px] text-slate-400 block mb-1">Position Y</label>
                 <input
                   type="number"
-                  value={selectedLayer.y}
+                  value={currentPos[1]}
                   onChange={(e) =>
-                    onUpdateLayer(selectedLayer.id, { y: parseInt(e.target.value) || 0 })
+                    onUpdateLayer(selectedLayer.id!, {
+                      p: [currentPos[0], parseInt(e.target.value) || 0],
+                    })
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-slate-50"
                 />
               </div>
             </div>
 
-            {/* Width / Height */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] text-slate-700 font-bold block mb-1">Width</label>
-                <input
-                  type="number"
-                  value={selectedLayer.width}
-                  onChange={(e) =>
-                    onUpdateLayer(selectedLayer.id, {
-                      width: Math.max(10, parseInt(e.target.value) || 10),
-                    })
-                  }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-slate-700 font-bold block mb-1">Height</label>
-                <input
-                  type="number"
-                  value={selectedLayer.height}
-                  onChange={(e) =>
-                    onUpdateLayer(selectedLayer.id, {
-                      height: Math.max(10, parseInt(e.target.value) || 10),
-                    })
-                  }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
-                />
-              </div>
-            </div>
-
-            {/* Slab Depth & Rotation */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] text-slate-700 font-bold block mb-1">Slab Depth</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={selectedLayer.depth}
-                  onChange={(e) =>
-                    onUpdateLayer(selectedLayer.id, {
-                      depth: Math.max(0, parseInt(e.target.value) || 0),
-                    })
-                  }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-slate-700 font-bold block mb-1">Rotation (°)</label>
-                <input
-                  type="number"
-                  value={selectedLayer.rotation}
-                  onChange={(e) =>
-                    onUpdateLayer(selectedLayer.id, {
-                      rotation: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
-                />
-              </div>
-            </div>
-
-            {/* Layer Colors & Styling (Fill, Shadow, Border) */}
-            <div className="pt-2.5 border-t border-slate-200 space-y-3">
-              <div className="flex items-center gap-1.5">
-                <Paintbrush className="w-3.5 h-3.5 text-[#ff6b35]" />
-                <span className="text-[11px] font-mono text-slate-800 font-bold uppercase tracking-wider">
-                  Warna Layer & Outline
+            {/* Rotation Angle */}
+            <div>
+              <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                <span>ROTATION ANGLE</span>
+                <span className="font-semibold text-slate-800">
+                  {typeof selectedLayer.r === 'number' ? selectedLayer.r : 0}°
                 </span>
               </div>
+              <input
+                type="range"
+                min="-180"
+                max="180"
+                value={typeof selectedLayer.r === 'number' ? selectedLayer.r : 0}
+                onChange={(e) =>
+                  onUpdateLayer(selectedLayer.id!, {
+                    r: parseInt(e.target.value) || 0,
+                  })
+                }
+                className="w-full accent-[#ff6b35] h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+              />
+            </div>
 
-              {/* 1. Warna Asli (Front Face Fill) */}
-              <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-900">1. Warna Asli (Fill)</span>
-                  {selectedLayer.customHex && (
-                    <button
-                      type="button"
-                      onClick={() => onUpdateLayer(selectedLayer.id, { customHex: undefined })}
-                      className="text-[10px] text-blue-600 hover:text-blue-800 underline font-semibold"
-                    >
-                      Reset ke Role
-                    </button>
-                  )}
+            {/* Scale / Resize */}
+            <div className="space-y-2">
+              <div>
+                <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                  <span>SCALE WIDTH (X)</span>
+                  <span className="font-semibold text-slate-800">
+                    {Array.isArray(selectedLayer.s) && typeof selectedLayer.s[0] === 'number'
+                      ? `${selectedLayer.s[0]}%`
+                      : '100%'}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label
-                    className="w-8 h-8 rounded-lg border border-slate-300 shadow-xs cursor-pointer relative overflow-hidden shrink-0 flex items-center justify-center transition hover:scale-105"
-                    style={{ backgroundColor: currentFillHex }}
-                    title="Klik untuk memilih warna kustom"
-                  >
-                    <input
-                      type="color"
-                      value={currentFillHex}
-                      onChange={(e) =>
-                        onUpdateLayer(selectedLayer.id, { customHex: e.target.value })
-                      }
-                      className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
-                    />
-                  </label>
-                  <select
-                    value={selectedLayer.customHex ? 'custom' : selectedLayer.fillRole}
-                    onChange={(e) => {
-                      if (e.target.value !== 'custom') {
-                        onUpdateLayer(selectedLayer.id, {
-                          fillRole: e.target.value as RoleColorKey,
-                          customHex: undefined,
-                        });
-                      }
-                    }}
-                    className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-white text-slate-900 font-semibold text-xs"
-                  >
-                    {selectedLayer.customHex && (
-                      <option value="custom">Kustom ({selectedLayer.customHex})</option>
-                    )}
-                    {COLOR_ROLES.map((r) => (
-                      <option key={r.role} value={r.role}>
-                        Role: {r.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <input
+                  type="range"
+                  min="20"
+                  max="300"
+                  value={
+                    Array.isArray(selectedLayer.s) && typeof selectedLayer.s[0] === 'number'
+                      ? selectedLayer.s[0]
+                      : 100
+                  }
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 100;
+                    const curY = Array.isArray(selectedLayer.s) && typeof selectedLayer.s[1] === 'number'
+                      ? selectedLayer.s[1]
+                      : 100;
+                    onUpdateLayer(selectedLayer.id!, {
+                      s: [val, curY],
+                    });
+                  }}
+                  className="w-full accent-[#ff6b35] h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+                />
               </div>
 
-              {/* 2. Warna Shadow (Sisi Slab 3D) */}
-              <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-900">2. Warna Shadow (Sisi Slab)</span>
-                  {selectedLayer.customSideHex && (
-                    <button
-                      type="button"
-                      onClick={() => onUpdateLayer(selectedLayer.id, { customSideHex: undefined })}
-                      className="text-[10px] text-blue-600 hover:text-blue-800 underline font-semibold"
-                    >
-                      Reset ke Role
-                    </button>
-                  )}
+              <div>
+                <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                  <span>SCALE HEIGHT (Y)</span>
+                  <span className="font-semibold text-slate-800">
+                    {Array.isArray(selectedLayer.s) && typeof selectedLayer.s[1] === 'number'
+                      ? `${selectedLayer.s[1]}%`
+                      : '100%'}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label
-                    className="w-8 h-8 rounded-lg border border-slate-300 shadow-xs cursor-pointer relative overflow-hidden shrink-0 flex items-center justify-center transition hover:scale-105"
-                    style={{ backgroundColor: currentSideHex }}
-                    title="Klik untuk memilih warna shadow kustom"
-                  >
-                    <input
-                      type="color"
-                      value={currentSideHex}
-                      onChange={(e) =>
-                        onUpdateLayer(selectedLayer.id, { customSideHex: e.target.value })
-                      }
-                      className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
-                    />
-                  </label>
-                  <select
-                    value={
-                      selectedLayer.customSideHex
-                        ? 'custom'
-                        : selectedLayer.sideColorRole || 'deep'
-                    }
-                    onChange={(e) => {
-                      if (e.target.value !== 'custom') {
-                        onUpdateLayer(selectedLayer.id, {
-                          sideColorRole: e.target.value as RoleColorKey,
-                          customSideHex: undefined,
-                        });
-                      }
-                    }}
-                    className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-white text-slate-900 font-semibold text-xs"
-                  >
-                    {selectedLayer.customSideHex && (
-                      <option value="custom">Kustom ({selectedLayer.customSideHex})</option>
-                    )}
-                    {COLOR_ROLES.map((r) => (
-                      <option key={r.role} value={r.role}>
-                        Role: {r.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <input
+                  type="range"
+                  min="20"
+                  max="300"
+                  value={
+                    Array.isArray(selectedLayer.s) && typeof selectedLayer.s[1] === 'number'
+                      ? selectedLayer.s[1]
+                      : 100
+                  }
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 100;
+                    const curX = Array.isArray(selectedLayer.s) && typeof selectedLayer.s[0] === 'number'
+                      ? selectedLayer.s[0]
+                      : 100;
+                    onUpdateLayer(selectedLayer.id!, {
+                      s: [curX, val],
+                    });
+                  }}
+                  className="w-full accent-[#ff6b35] h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Grouping Section (Empty Container Parent with Children) */}
+            <div className="pt-2 border-t border-slate-200">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] text-slate-800 font-bold block">
+                  Group Parent
+                </label>
+                <button
+                  onClick={onCreateGroup}
+                  className="px-2 py-1 rounded-lg bg-orange-100 hover:bg-orange-200 text-[#ff6b35] font-bold text-[10px] transition"
+                  title="Buat wadah grup kosong baru"
+                >
+                  + Create Group
+                </button>
               </div>
 
-              {/* 3. Warna Border & Tebal Outline */}
-              <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-xl space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-900">3. Warna Border (Garis Tepi)</span>
-                  {selectedLayer.customOutlineHex && (
-                    <button
-                      type="button"
-                      onClick={() => onUpdateLayer(selectedLayer.id, { customOutlineHex: undefined })}
-                      className="text-[10px] text-blue-600 hover:text-blue-800 underline font-semibold"
-                    >
-                      Reset ke Role
-                    </button>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <label
-                    className="w-8 h-8 rounded-lg border border-slate-300 shadow-xs cursor-pointer relative overflow-hidden shrink-0 flex items-center justify-center transition hover:scale-105"
-                    style={{ backgroundColor: currentOutlineHex }}
-                    title="Klik untuk memilih warna border kustom"
-                  >
-                    <input
-                      type="color"
-                      value={currentOutlineHex}
-                      onChange={(e) =>
-                        onUpdateLayer(selectedLayer.id, { customOutlineHex: e.target.value })
-                      }
-                      className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
-                    />
-                  </label>
-                  <select
-                    value={
-                      selectedLayer.customOutlineHex
-                        ? 'custom'
-                        : selectedLayer.outlineRole || 'ink'
-                    }
-                    onChange={(e) => {
-                      if (e.target.value !== 'custom') {
-                        onUpdateLayer(selectedLayer.id, {
-                          outlineRole: e.target.value as RoleColorKey,
-                          customOutlineHex: undefined,
-                        });
-                      }
-                    }}
-                    className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-white text-slate-900 font-semibold text-xs"
-                  >
-                    {selectedLayer.customOutlineHex && (
-                      <option value="custom">Kustom ({selectedLayer.customOutlineHex})</option>
-                    )}
-                    {COLOR_ROLES.map((r) => (
-                      <option key={r.role} value={r.role}>
-                        Role: {r.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Tebal Border Slider */}
-                <div className="pt-1.5 border-t border-slate-200">
-                  <div className="flex justify-between text-[11px] font-mono text-slate-700 mb-1">
-                    <span className="font-bold">TEBAL BORDER</span>
-                    <span className="font-bold text-slate-900">{selectedLayer.outlineWidth ?? 5} px</span>
+              {selectedLayer.isGroup ? (
+                <div className="bg-orange-50 p-2.5 rounded-xl border border-orange-200 text-xs space-y-1">
+                  <div className="font-bold text-orange-950 flex items-center gap-1.5">
+                    <span>📁 Wadah Grup Induk (Empty Container)</span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="14"
-                    step="1"
-                    value={selectedLayer.outlineWidth ?? 5}
-                    onChange={(e) =>
-                      onUpdateLayer(selectedLayer.id, {
-                        outlineWidth: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="w-full accent-[#ff6b35] h-2 bg-slate-200 rounded-lg cursor-pointer"
-                  />
+                  <p className="text-[10px] text-slate-600 leading-tight">
+                    Wadah ini tidak memiliki bentuk visual sendiri, namun memegang animasi gerak untuk menggerakkan semua children yang ada di dalamnya.
+                  </p>
+                  <div className="pt-1 text-[11px] font-semibold text-orange-800">
+                    Children: {layers.filter((l) => l.groupId === selectedLayer.id).length} layer
+                  </div>
                 </div>
+              ) : selectedLayer.groupId ? (
+                <div className="space-y-2 bg-orange-50/70 p-2.5 rounded-xl border border-orange-200">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-orange-950 truncate">
+                      Grup: {layers.find((g) => g.id === selectedLayer.groupId)?.name || selectedLayer.groupId}
+                    </span>
+                    <button
+                      onClick={() => onSetLayerGroup(selectedLayer.id!, undefined)}
+                      className="px-2 py-0.5 rounded text-[10px] bg-red-100 text-red-700 hover:bg-red-200 font-bold shrink-0 ml-1"
+                      title="Keluarkan layer ini dari grup"
+                    >
+                      Keluar Group
+                    </button>
+                  </div>
+                  <span className="text-[10px] text-slate-500 block leading-tight">
+                    ↳ Layer ini berada di dalam grup dan otomatis mengikuti gerakan dari wadah grup induknya.
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <select
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-800 text-xs"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        onSetLayerGroup(selectedLayer.id!, e.target.value);
+                      }
+                    }}
+                    value=""
+                  >
+                    <option value="" disabled>Pilih Grup untuk Bergabung...</option>
+                    {layers.filter((l) => l.isGroup).map((g) => (
+                      <option key={g.id} value={g.id}>
+                        📁 Masuk ke: {g.name || g.id}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-[10px] text-slate-400 block leading-tight">
+                    {layers.some((l) => l.isGroup)
+                      ? 'Pilih grup di atas atau klik "+ Create Group" untuk membuat wadah baru.'
+                      : 'Belum ada grup. Klik "+ Create Group" untuk membuat wadah grup kosong.'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Slab Depth Slider */}
+            <div>
+              <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                <span>SLAB DEPTH</span>
+                <span className="font-semibold text-slate-800">
+                  {selectedLayer.shapes[0]?.depth ?? 1}x
+                </span>
               </div>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value={selectedLayer.shapes[0]?.depth ?? 1}
+                onChange={(e) =>
+                  onUpdateLayerShapeDepth(
+                    selectedLayer.id!,
+                    parseFloat(e.target.value) || 0
+                  )
+                }
+                className="w-full accent-[#ff6b35] h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+              />
+            </div>
+
+            {/* Fill Role Mapping */}
+            <div>
+              <label className="text-[11px] text-slate-400 block mb-1">Color Role Slot</label>
+              <select
+                value={selectedLayer.shapes[0]?.fill || 'main'}
+                onChange={(e) =>
+                  onUpdateLayerShapeFill(selectedLayer.id!, e.target.value as Swatch)
+                }
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-800 capitalize"
+              >
+                {['main', 'gold', 'tint', 'ok', 'hot', 'deep', 'white', 'grey', 'paper', 'ink'].map(
+                  (role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  )
+                )}
+              </select>
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-slate-600 font-mono text-xs font-medium">
-            <Sliders className="w-7 h-7 mx-auto mb-2.5 text-slate-400" />
-            Pilih layer di panel kiri atau kanvas untuk mengedit properti slab.
+          <div className="text-center py-8 text-slate-400 font-mono text-xs">
+            <Sliders className="w-6 h-6 mx-auto mb-2 text-slate-300" />
+            Pilih layer di panel kiri atau kanvas untuk mengedit posisi & slab depth.
           </div>
         )}
       </div>

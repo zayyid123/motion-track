@@ -13,6 +13,9 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  Undo2,
+  Redo2,
+  Trash2,
 } from 'lucide-react';
 import { StickerProject } from '@/types/sticker';
 
@@ -30,6 +33,12 @@ interface ToolbarProps {
   onProjectNameChange: (name: string) => void;
   zoom: number;
   onZoomChange: (newZoom: number) => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  hasSelectedLayer?: boolean;
+  onDeleteSelectedLayer?: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -46,6 +55,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onProjectNameChange,
   zoom,
   onZoomChange,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
+  hasSelectedLayer = false,
+  onDeleteSelectedLayer,
 }) => {
   return (
     <header className="h-14 border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 flex items-center justify-between z-20">
@@ -70,6 +85,35 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           onChange={(e) => onProjectNameChange(e.target.value)}
           className="font-mono text-sm px-2.5 py-1 rounded-lg border border-slate-300 hover:border-slate-400 focus:border-[#ff6b35] focus:outline-none bg-slate-50 transition w-44 sm:w-60 text-slate-900 font-bold placeholder:text-slate-500"
         />
+
+        {/* Undo / Redo & Delete Layer Quick Buttons */}
+        <div className="flex items-center gap-1 pl-2 border-l border-slate-200">
+          <button
+            onClick={onUndo}
+            disabled={!canUndo}
+            className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition"
+            title="Undo (Ctrl + Z / Cmd + Z)"
+          >
+            <Undo2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onRedo}
+            disabled={!canRedo}
+            className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition"
+            title="Redo (Ctrl + Shift + Z / Cmd + Shift + Z)"
+          >
+            <Redo2 className="w-4 h-4" />
+          </button>
+          {hasSelectedLayer && (
+            <button
+              onClick={onDeleteSelectedLayer}
+              className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition ml-1"
+              title="Delete Selected Layer (Delete / Backspace)"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Playback Controls & Zoom */}
