@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Key, Globe, Cpu, Check } from 'lucide-react';
-import { AISettings } from '@/types/sticker';
+import { Cpu, Globe, Key, ShieldCheck } from 'lucide-react';
+import type { AISettings, AITransport } from '@/lib/ai/types';
+import { Modal } from '@/components/ui/Modal';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -18,119 +19,179 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onSave,
 }) => {
   const [form, setForm] = useState<AISettings>(settings);
-  const [savedNotice, setSavedNotice] = useState(false);
 
-  if (!isOpen) return null;
+  const relayBlocked = form.transport === 'relay' && !form.relayConsent;
+  const insecureBaseUrl = /^http:\/\//i.test(form.baseUrl.trim());
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(form);
-    setSavedNotice(true);
-    setTimeout(() => {
-      setSavedNotice(false);
-      onClose();
-    }, 800);
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (relayBlocked) return;
+    onSave({
+      ...form,
+      baseUrl: form.baseUrl.trim().replace(/\/+$/, ''),
+      apiKey: form.apiKey.trim(),
+      model: form.model.trim(),
+    });
+    onClose();
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200/90 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden font-mono text-xs">
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#ff6b35] text-white flex items-center justify-center font-bold">
-              AI
-            </div>
-            <h3 className="font-bold text-sm text-slate-800">AI Connection Settings</h3>
-          </div>
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title="AI Connection Settings"
+      icon={
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ff6b35] font-bold text-white">
+          AI
+        </div>
+      }
+      maxWidth="max-w-lg"
+      footer={
+        <div className="flex items-center justify-end gap-2">
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/50"
+            className="rounded-xl border border-slate-200 px-4 py-2 text-slate-600 transition hover:bg-slate-50"
           >
-            <X className="w-4 h-4" />
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="ai-settings-form"
+            disabled={relayBlocked}
+            className="rounded-xl bg-slate-900 px-5 py-2 font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Save settings
           </button>
         </div>
+      }
+    >
+      <form id="ai-settings-form" onSubmit={handleSubmit} className="space-y-4">
+        <p className="font-sans text-xs font-medium leading-relaxed text-slate-700">
+          Connect any OpenAI-compatible chat endpoint. Direct mode keeps your key in this browser.
+          Relay mode sends the key through this app&apos;s server and requires explicit consent.
+        </p>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <p className="text-slate-700 text-xs font-sans leading-relaxed font-medium">
-            Connect your custom AI by entering your <strong>Base URL</strong> and <strong>API Key</strong> (compatible with OpenAI format). Keys are saved securely in your browser (<code>localStorage</code>).
-          </p>
-
-          <div>
-            <label className="flex items-center gap-1.5 text-slate-900 font-bold mb-1">
-              <Globe className="w-3.5 h-3.5 text-blue-600" />
-              <span>AI Base URL</span>
-            </label>
-            <input
-              type="url"
-              required
-              value={form.baseUrl}
-              onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
-              placeholder="https://api.openai.com/v1"
-              className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold placeholder:text-slate-500"
-            />
-            <span className="text-[11px] text-slate-600 font-medium block mt-1">
-              Example: https://api.openai.com/v1 or your local AI proxy.
-            </span>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-1.5 text-slate-900 font-bold mb-1">
-              <Key className="w-3.5 h-3.5 text-blue-600" />
-              <span>API Key</span>
-            </label>
-            <input
-              type="password"
-              value={form.apiKey}
-              onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-              placeholder="sk-proj-..."
-              className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold placeholder:text-slate-500"
-            />
-            <span className="text-[11px] text-slate-600 font-medium block mt-1">
-              Stored securely on your local device.
-            </span>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-1.5 text-slate-900 font-bold mb-1">
-              <Cpu className="w-3.5 h-3.5 text-blue-600" />
-              <span>Model Name</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={form.model}
-              onChange={(e) => setForm({ ...form, model: e.target.value })}
-              placeholder="gpt-4o-mini"
-              className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold placeholder:text-slate-500"
-            />
-          </div>
-
-          {/* Buttons */}
-          <div className="pt-2 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+        <div>
+          <label htmlFor="ai-base-url" className="mb-1 flex items-center gap-1.5 font-bold text-slate-900">
+            <Globe className="h-3.5 w-3.5 text-blue-600" />
+            <span>Base URL</span>
+          </label>
+          <input
+            id="ai-base-url"
+            type="url"
+            required
+            value={form.baseUrl}
+            onChange={(event) => setForm({ ...form, baseUrl: event.target.value })}
+            placeholder="https://api.openai.com/v1"
+            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 font-semibold text-slate-900 placeholder:text-slate-500 focus:border-[#ff6b35] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6b35]/30"
+          />
+          <span className="mt-1 block text-[11px] font-medium text-slate-500">
+            The client appends <code>/chat/completions</code>. Example: https://api.openai.com/v1
+          </span>
+          {insecureBaseUrl ? (
+            <span
+              role="alert"
+              className="mt-1.5 block rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] leading-relaxed text-amber-900"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold flex items-center gap-1.5 shadow-sm"
-            >
-              {savedNotice ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" /> Saved!
-                </>
-              ) : (
-                'Save Settings'
-              )}
-            </button>
+              This endpoint uses plain HTTP. Browsers usually block it through CORS, and the relay
+              only accepts it when the server sets <code>AI_PROXY_ALLOW_HTTP=1</code> plus an
+              explicit <code>AI_PROXY_ALLOWED_HOSTS</code> entry. The API key would travel
+              unencrypted.
+            </span>
+          ) : null}
+        </div>
+
+        <div>
+          <label htmlFor="ai-api-key" className="mb-1 flex items-center gap-1.5 font-bold text-slate-900">
+            <Key className="h-3.5 w-3.5 text-blue-600" />
+            <span>API key</span>
+          </label>
+          <input
+            id="ai-api-key"
+            type="password"
+            autoComplete="off"
+            value={form.apiKey}
+            onChange={(event) => setForm({ ...form, apiKey: event.target.value })}
+            placeholder="sk-proj-..."
+            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 font-semibold text-slate-900 placeholder:text-slate-500 focus:border-[#ff6b35] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6b35]/30"
+          />
+          <span className="mt-1 block text-[11px] font-medium text-slate-500">
+            Stored in <code>localStorage</code> on this device only.
+          </span>
+        </div>
+
+        <div>
+          <label htmlFor="ai-model" className="mb-1 flex items-center gap-1.5 font-bold text-slate-900">
+            <Cpu className="h-3.5 w-3.5 text-blue-600" />
+            <span>Model</span>
+          </label>
+          <input
+            id="ai-model"
+            type="text"
+            required
+            value={form.model}
+            onChange={(event) => setForm({ ...form, model: event.target.value })}
+            placeholder="gpt-4o-mini"
+            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 font-semibold text-slate-900 placeholder:text-slate-500 focus:border-[#ff6b35] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6b35]/30"
+          />
+        </div>
+
+        <fieldset>
+          <legend className="mb-1.5 flex items-center gap-1.5 font-bold text-slate-900">
+            <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
+            <span>Transport</span>
+          </legend>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                { id: 'direct', title: 'Direct', detail: 'Browser → provider' },
+                { id: 'relay', title: 'Server relay', detail: 'Browser → this app → provider' },
+              ] as Array<{ id: AITransport; title: string; detail: string }>
+            ).map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={form.transport === option.id}
+                onClick={() => setForm({ ...form, transport: option.id })}
+                className={`rounded-xl border p-2.5 text-left transition ${
+                  form.transport === option.id
+                    ? 'border-[#ff6b35] bg-orange-50 text-orange-900'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <div className="text-[11px] font-bold">{option.title}</div>
+                <div className="text-[10px] leading-tight opacity-75">{option.detail}</div>
+              </button>
+            ))}
           </div>
-        </form>
-      </div>
-    </div>
+
+          <label
+            className={`mt-2 flex items-start gap-2 rounded-xl border p-2.5 text-[11px] leading-relaxed transition ${
+              form.transport === 'relay'
+                ? 'border-amber-300 bg-amber-50 text-amber-950'
+                : 'border-slate-200 bg-slate-50 text-slate-500'
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={form.relayConsent}
+              disabled={form.transport !== 'relay'}
+              onChange={(event) => setForm({ ...form, relayConsent: event.target.checked })}
+              className="mt-0.5 h-3.5 w-3.5 accent-[#ff6b35] disabled:opacity-40"
+            />
+            <span>
+              I allow this app&apos;s server to forward my API key to the selected provider host.
+              The relay only accepts HTTPS hosts on the server allowlist.
+            </span>
+          </label>
+          {relayBlocked ? (
+            <p role="alert" className="mt-1.5 text-[11px] font-semibold text-red-700">
+              Grant consent or switch to direct mode to save.
+            </p>
+          ) : null}
+        </fieldset>
+      </form>
+    </Modal>
   );
 };

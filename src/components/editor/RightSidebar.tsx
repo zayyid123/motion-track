@@ -3,10 +3,12 @@
 import React from 'react';
 import { Palette as PaletteIcon, Activity, Box, Sliders } from 'lucide-react';
 import { Palette, PALETTES, ACCENTS, Swatch, Layer } from '@/lib/funIsometric';
+import { MOTION_PRESETS } from '@/lib/funIsometric/presets';
 
 interface RightSidebarProps {
   layers: ReadonlyArray<Layer>;
   palette: Palette;
+  paletteId: string;
   selectedLayer: Layer | null;
   onUpdateLayer: (id: string, updates: Partial<Layer>) => void;
   onUpdateLayerShapeFill: (id: string, role: Swatch) => void;
@@ -20,28 +22,10 @@ interface RightSidebarProps {
   onUpdateOutlineWidth: (w: number) => void;
 }
 
-const MOTION_PRESETS = [
-  { id: 'none', name: 'None (Still)', desc: 'No animation' },
-  { id: 'wiggle', name: 'Wiggle', desc: 'Rocking taps' },
-  { id: 'hop', name: 'Hop', desc: 'Jump & slam' },
-  { id: 'bounce', name: 'Bounce', desc: 'Spring rebound' },
-  { id: 'clasp', name: 'Clasp', desc: 'Lift & slam' },
-  { id: 'shackle', name: 'Shackle', desc: 'Spring open/shut' },
-  { id: 'drift', name: 'Drift', desc: 'Figure-8 hover' },
-  { id: 'twist', name: 'Twist', desc: 'Sharp twist' },
-  { id: 'wobble', name: 'Wobble', desc: 'Organic rock' },
-  { id: 'look', name: 'Look', desc: 'Glance & dart' },
-  { id: 'sparkle', name: 'Sparkle', desc: 'Pop & turn' },
-  { id: 'twinkle', name: 'Twinkle', desc: 'Star pop' },
-  { id: 'glint', name: 'Glint', desc: 'Glare drift' },
-  { id: 'sway', name: 'Sway', desc: 'Gentle lean' },
-  { id: 'float', name: 'Float', desc: 'Airy hover' },
-  { id: 'bob', name: 'Bob', desc: 'Small bob' },
-];
-
 export const RightSidebar: React.FC<RightSidebarProps> = ({
   layers,
   palette,
+  paletteId,
   selectedLayer,
   onUpdateLayer,
   onUpdateLayerShapeFill,
@@ -89,6 +73,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                 return (
                   <button
                     key={m.id}
+                    type="button"
+                    aria-pressed={isSelected}
                     onClick={() => onApplyMotionToLayer(selectedLayer.id!, m.id)}
                     className={`px-2 py-1.5 rounded-xl border text-left text-xs font-mono transition ${
                       isSelected
@@ -96,8 +82,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                         : 'border-slate-200 hover:border-orange-200 hover:bg-slate-50 text-slate-700'
                     }`}
                   >
-                    <div className="truncate">{m.name}</div>
-                    <div className="text-[9px] text-slate-400 font-normal truncate">{m.desc}</div>
+                    <div className="truncate">{m.label}</div>
+                    <div className="text-[9px] text-slate-400 font-normal truncate">{m.description}</div>
                   </button>
                 );
               })}
@@ -138,12 +124,23 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
           {(Object.keys(PALETTES) as Array<keyof typeof PALETTES>).map((key) => (
             <button
               key={key}
+              type="button"
+              aria-pressed={paletteId === key}
               onClick={() => onPaletteChange(key)}
-              className="px-2.5 py-1 rounded-lg text-xs font-mono transition border capitalize bg-white text-slate-600 hover:bg-slate-50 border-slate-200"
+              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition border capitalize ${
+                paletteId === key
+                  ? 'bg-[#ff6b35] border-[#ff6b35] text-white font-bold shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
+              }`}
             >
               {key}
             </button>
           ))}
+          {paletteId === 'custom' ? (
+            <span className="rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-mono font-bold text-orange-700">
+              custom
+            </span>
+          ) : null}
         </div>
 
         {/* Swatches */}

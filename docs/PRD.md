@@ -301,3 +301,75 @@ Target numerik ditetapkan setelah baseline uji pertama; jangan menganggap angka 
 - Repo skill `fun-isometric`: <https://github.com/kelvinkn17/skills>
 - Halaman skill: <https://skills.klvn.dev/fun-isometric>
 - Skill tersebut mendeskripsikan ilustrasi slab isometrik, palet warna berbasis peran, rig bagian, dan preset motion sebagai referensi konsep. Motion-Track perlu mempertahankan identitas, implementasi, dan UX produknya sendiri.
+
+## 17. Status implementasi
+
+Bagian ini mencatat keputusan yang sudah diterapkan dan menyimpang dari asumsi
+awal PRD. Dokumen teknis terkait: [ARCHITECTURE.md](ARCHITECTURE.md),
+[PROJECT_FORMAT.md](PROJECT_FORMAT.md), [EXPORT.md](EXPORT.md), dan
+[AI-RELAY.md](AI-RELAY.md).
+
+### Fondasi
+
+- `src/lib/funIsometric` menjadi satu-satunya sumber model scene (`Icon`,
+  `Layer`, `Shape`, `Palette`, `PALETTES`, `VIEWS`). Engine lama (`renderer.ts`,
+  `motionEngine.ts`, `exporter.ts`, `aiClient.ts`, `types/sticker.ts`,
+  `types/palettes.ts`) sudah dihapus agar tidak ada dua model yang menyimpang.
+- Riwayat undo/redo bersifat transaksional (`commit`, `live`, `coalesce`) dengan
+  batas 50 entri dan structural sharing. Gestur tanpa perubahan tidak
+  menghasilkan entri.
+- Playback memakai `PlaybackClock` di luar state React. Hanya kanvas dan timeline
+  yang berlangganan per frame; shell studio tidak render ulang 60 FPS.
+
+### UX dan aksesibilitas
+
+- Modal memakai `components/ui/Modal.tsx`: focus trap, Escape, scroll lock, dan
+  pengembalian fokus.
+- Notifikasi memakai toast; `alert()` tidak lagi dipakai.
+- `ErrorBoundary` di `/dashboard` menjaga draft autosave tetap dapat dipulihkan.
+- Copy UI diseragamkan ke bahasa Inggris. PRD ini tetap berbahasa Indonesia.
+- Preferensi `prefers-reduced-motion` dihormati pada preview landing dan
+  autoplay studio.
+
+### Format proyek dan autosave
+
+- Format v2 berisi envelope `version`, `icon`, `paletteId`, `palette`, `facing`,
+  `outlineWidth`, dan `savedAt`, divalidasi dengan zod.
+- File icon JSON lama tetap dapat dibuka melalui migrasi otomatis.
+- Draft disimpan dengan debounce 700 ms ke `localStorage` dan dipulihkan setelah
+  mount untuk menjaga hidrasi.
+
+### Ekspor
+
+- GIF, MP4, dan MOV kini benar-benar menghasilkan file; tidak ada lagi preview
+  palsu atau unduhan kosong.
+- GIF diekspor untuk loop penuh, bukan setengah loop.
+- MP4 memakai WebCodecs + `mp4-muxer`; jika tidak tersedia, fallback
+  MediaRecorder memberi tahu pengguna bila hasilnya WebM.
+- MOV memakai `ffmpeg.wasm` dengan ProRes 4444 (`prores_ks`) dan fallback
+  `qtrle`, sehingga alpha tetap terjaga.
+- Wrapper ffmpeg dan core (`ffmpeg-core.js`, `ffmpeg-core.wasm`) disajikan
+  same-origin dari `public/ffmpeg/` (dihasilkan saat `predev`/`prebuild`),
+  sehingga ekspor MOV mandiri, andal, dan tidak bergantung pada CDN unpkg.
+- Ekspor dapat dibatalkan, menampilkan progres, dan membersihkan object URL.
+
+### AI hybrid dan auto-apply
+
+- Transport default adalah direct: key tetap di tab pengguna.
+- Relay server hanya aktif setelah pengguna memberi consent eksplisit.
+- Relay menolak endpoint non-HTTPS secara default (kecuali opt-in eksplisit lewat `AI_PROXY_ALLOW_HTTP=1` dan allowlist host), kredensial di URL, host privat/loopback, rentang IP internal, dan redirect; mendukung allowlist host, batas body 64 KB, timeout 30 detik, rate limit per IP, serta deteksi SSE otomatis (`parseCompletion.ts`).
+- API key tidak pernah dicatat ke log dan pesan error upstream disanitasi.
+- **AI auto-apply:** asisten mengembalikan kontrak JSON `{ reply, actions }`. Aksi divalidasi dengan skema zod (`src/lib/ai/actions.ts`), diterapkan secara atomik ke dokumen sebagai satu langkah undo (`Apply AI changes`), dan aksi yang tidak valid atau referensi layer yang tidak ditemukan dilewati secara aman dengan badge ringkasan pada chat UI.
+
+### Kualitas
+
+- Unit test Vitest mencakup riwayat, format proyek dan migrasi, perencanaan frame, prompt AI, guard relay, parser completion/SSE, aksi AI auto-apply, bounds, dan clock.
+- CI menjalankan lint, typecheck, test, dan build produksi.
+- Verifikasi lokal: `npm run lint` bersih, `tsc --noEmit` bersih, 99/99 unit test lulus (9 file), dan `next build` berhasil.
+
+### Penyimpangan dan catatan terbuka
+
+- Asumsi awal “PNG adalah format ekspor pertama” tidak lagi berlaku; GIF, MP4, dan MOV sudah tersedia.
+- `mp4-muxer` sudah ditandai deprecated oleh upstream (arahannya Mediabunny). Paket masih dipakai sampai ada kebutuhan migrasi.
+- Rate limit relay bersifat per instance, sehingga tidak global pada platform serverless multi-instance.
+- Verifikasi interaksi dan ekspor di browser nyata (terutama pemuatan `/ffmpeg/index.js`) masih perlu dilakukan sebelum rilis.

@@ -22,10 +22,10 @@ import {
   Layers,
   Sliders,
 } from 'lucide-react';
-import { StickerProject } from '@/types/sticker';
 
 interface ToolbarProps {
-  project: StickerProject;
+  projectName: string;
+  saveState?: 'saved' | 'saving';
   isPlaying: boolean;
   onTogglePlay: () => void;
   onResetFrame: () => void;
@@ -49,7 +49,8 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
-  project,
+  projectName,
+  saveState = 'saved',
   isPlaying,
   onTogglePlay,
   onResetFrame,
@@ -93,17 +94,28 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
           <input
             type="text"
-            value={project.name}
+            value={projectName}
             placeholder="Project Name..."
+            aria-label="Project name"
             onChange={(e) => onProjectNameChange(e.target.value)}
             className="font-mono text-xs sm:text-sm px-2.5 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 focus:border-[#ff6b35] focus:outline-none bg-slate-50 transition w-32 xs:w-40 sm:w-48 md:w-56 text-slate-900 font-bold placeholder:text-slate-500"
           />
+          <span
+            className={`hidden xl:inline-flex items-center gap-1 font-mono text-[10px] font-semibold ${
+              saveState === 'saving' ? 'text-amber-600' : 'text-emerald-600'
+            }`}
+            title={saveState === 'saving' ? 'Saving draft…' : 'Draft saved to this browser'}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${saveState === 'saving' ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+            {saveState === 'saving' ? 'Saving' : 'Saved'}
+          </span>
 
           {/* Undo / Redo & Delete Buttons (Visible on Desktop, moved to Hamburger on Mobile) */}
           <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 pl-1 sm:pl-2 border-l border-slate-200">
             <button
               onClick={onUndo}
               disabled={!canUndo}
+              aria-label="Undo"
               className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition"
               title="Undo (Ctrl + Z)"
             >
@@ -112,6 +124,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <button
               onClick={onRedo}
               disabled={!canRedo}
+              aria-label="Redo"
               className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition"
               title="Redo (Ctrl + Shift + Z)"
             >
@@ -120,6 +133,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             {hasSelectedLayer && (
               <button
                 onClick={onDeleteSelectedLayer}
+                aria-label="Delete selected layer"
                 className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition"
                 title="Delete Selected Layer"
               >
@@ -133,6 +147,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <div className="hidden lg:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-300 shrink-0">
           <button
             onClick={onTogglePlay}
+            aria-label={isPlaying ? 'Pause animation' : 'Play animation'}
+            aria-pressed={isPlaying}
             className={`p-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1.5 px-3 ${
               isPlaying
                 ? 'bg-[#ff6b35] text-white shadow-sm shadow-orange-200'
@@ -146,6 +162,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
           <button
             onClick={onResetFrame}
+            aria-label="Jump to first frame"
             className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-white transition"
             title="Reset Frame"
           >
@@ -157,6 +174,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           {/* Zoom Controls */}
           <button
             onClick={() => onZoomChange(Math.max(0.4, Number((zoom - 0.1).toFixed(1))))}
+            aria-label="Zoom out"
             className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-white transition"
             title="Zoom Out"
           >
@@ -167,6 +185,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </span>
           <button
             onClick={() => onZoomChange(Math.min(2.0, Number((zoom + 0.1).toFixed(1))))}
+            aria-label="Zoom in"
             className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-white transition"
             title="Zoom In"
           >
@@ -174,6 +193,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </button>
           <button
             onClick={() => onZoomChange(1.0)}
+            aria-label="Reset zoom"
             className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-white transition"
             title="Reset Zoom"
           >
@@ -198,6 +218,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
           <button
             onClick={onLoadJSON}
+            aria-label="Open project JSON"
             className="p-1.5 sm:p-2 rounded-xl text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition border border-slate-300 bg-white hidden lg:block"
             title="Open JSON Project File"
           >
@@ -206,6 +227,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
           <button
             onClick={onSaveJSON}
+            aria-label="Save project JSON"
             className="p-1.5 sm:p-2 rounded-xl text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition border border-slate-300 bg-white hidden lg:block"
             title="Save JSON Project File"
           >
@@ -214,6 +236,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
           <button
             onClick={onOpenSettings}
+            aria-label="Open AI settings"
             className="p-1.5 sm:p-2 rounded-xl text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition border border-slate-300 bg-white hidden sm:block"
             title="AI Settings"
           >

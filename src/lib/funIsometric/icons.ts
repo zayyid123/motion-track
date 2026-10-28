@@ -42,6 +42,7 @@ export const padlock: Icon = {
       p: [-58, -62],
       r: 15,
       tilt: FACE,
+      tiltFromView: true,
       parent: 'body',
       m: shackle,
       shapes: [{ d: SHACKLE, fill: 'tint', depth: 0.7 }],
@@ -51,6 +52,7 @@ export const padlock: Icon = {
       name: 'Padlock Body',
       groupId: 'lock',
       tilt: FACE,
+      tiltFromView: true,
       shapes: [
         { d: rect(-112, -80, 224, 176, 24), fill: 'main', depth: 1 },
         { d: ellipse(0, 8, 36, 50), fill: 'white', depth: 0.25 },
@@ -87,6 +89,7 @@ export const chat: Icon = {
       name: 'Chat Face Slab',
       groupId: 'bot',
       tilt: BOT,
+      tiltFromView: true,
       shapes: [
         { d: pill(-8, -150, 16, 60), fill: 'grey', depth: 0.5 },
         { d: ellipse(0, -152, 20), fill: 'main', depth: 0.6 },
@@ -124,6 +127,7 @@ export const search: Icon = {
       name: 'Glass and Rim',
       groupId: 'lens',
       tilt: [-20, 28],
+      tiltFromView: false,
       shapes: [
         { d: poly([[54, 90], [90, 54], [178, 142], [142, 178]], [0, 0, 24, 24]), fill: 'main', depth: 1 },
         { d: poly([[48, 93], [93, 48], [113, 68], [68, 113]], 6), fill: 'grey', depth: 1 },
@@ -197,6 +201,7 @@ export const blankProject: Icon = {
       name: 'Initial Slab',
       p: [250, 250],
       tilt: FACE,
+      tiltFromView: true,
       motionPreset: 'wiggle',
       shapes: [
         {

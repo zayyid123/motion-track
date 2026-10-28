@@ -69,6 +69,8 @@ export type Layer = {
   s?: Anim<Vec>
   o?: Anim<number>
   tilt?: Vec
+  /** True when `tilt` came from the selected view and should follow facing changes. */
+  tiltFromView?: boolean
   ip?: number
   op?: number
   m?: Motion | ReadonlyArray<Motion>
@@ -242,9 +244,7 @@ function poseOf(L: Layer, f: number, frames: number, ignoreScale = false): Pose 
       p = [p[0] + d[0] * k, p[1] + d[1] * k]
     }
     if (m.s && !ignoreScale) {
-      const d = at(m.s, g)
-      const curSX = at(m.s, g)[0]
-      const curSY = at(m.s, g)[1]
+      const [curSX, curSY] = at(m.s, g)
       s = [(s[0] * curSX) / 100, (s[1] * curSY) / 100]
     }
     if (m.o) o *= at(m.o, g) / 100
@@ -378,7 +378,11 @@ export function render(ctx: Ctx, icon: Icon, sc: Scene, palette: Palette) {
         const [vx, vy] = [ext[0] * kk, ext[1] * kk]
         const n = Math.min(64, Math.max(2, Math.ceil((Math.hypot(vx, vy) * dev) / 0.8)))
         const sweep = new Path2D()
-        for (let j = n; j >= 0; j--) (step.e = (vx * j) / n), (step.f = (vy * j) / n), sweep.addPath(path, step)
+        for (let j = n; j >= 0; j--) {
+          step.e = (vx * j) / n
+          step.f = (vy * j) / n
+          sweep.addPath(path, step)
+        }
         if (w) {
           ctx.strokeStyle = ink
           ctx.lineWidth = w * 2

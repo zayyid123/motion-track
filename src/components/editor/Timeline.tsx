@@ -17,18 +17,15 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Layer } from '@/lib/funIsometric';
+import type { PlaybackClock } from '@/lib/editor/clock';
+import { useClockLoop, useIsPlaying, usePlaybackFrame } from '@/hooks/usePlayback';
 
 interface MultiTrackTimelineProps {
   layers: ReadonlyArray<Layer>;
-  currentFrame: number;
   totalFrames: number;
-  isPlaying: boolean;
+  clock: PlaybackClock;
   selectedLayerId: string | null;
   onSelectLayer: (id: string | null) => void;
-  onTogglePlay: () => void;
-  onSeek: (frame: number) => void;
-  loop: boolean;
-  onToggleLoop: () => void;
   onToggleHideLayer: (id: string) => void;
   onToggleLockLayer: (id: string) => void;
   onDeleteLayer: (id: string) => void;
@@ -38,21 +35,19 @@ interface MultiTrackTimelineProps {
 
 export const Timeline: React.FC<MultiTrackTimelineProps> = ({
   layers,
-  currentFrame,
   totalFrames,
-  isPlaying,
+  clock,
   selectedLayerId,
   onSelectLayer,
-  onTogglePlay,
-  onSeek,
-  loop,
-  onToggleLoop,
   onToggleHideLayer,
   onToggleLockLayer,
   onDeleteLayer,
   onUpdateLayerTiming,
   onMoveLayerIndex,
 }) => {
+  const currentFrame = usePlaybackFrame(clock);
+  const isPlaying = useIsPlaying(clock);
+  const loop = useClockLoop(clock);
   const [isExpanded, setIsExpanded] = useState(true);
   const [timelineHeight, setTimelineHeight] = useState(260); // Adjustable height in px
   const [isResizingHeight, setIsResizingHeight] = useState(false);
@@ -127,7 +122,7 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
       const rect = rightTracksRef.current.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const targetFrame = Math.max(0, Math.min(totalFrames - 1, Math.round((clickX / rect.width) * totalFrames)));
-      onSeek(targetFrame);
+      clock.seek(targetFrame);
     };
 
     const handlePlayheadUp = () => {
@@ -142,7 +137,7 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
       window.removeEventListener('mousemove', handlePlayheadMove);
       window.removeEventListener('mouseup', handlePlayheadUp);
     };
-  }, [isDraggingPlayhead, totalFrames, onSeek]);
+  }, [isDraggingPlayhead, totalFrames, clock]);
 
   // Dragging / Trimming clip clips on timeline track
   useEffect(() => {
@@ -196,7 +191,7 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
     const rect = rightTracksRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const targetFrame = Math.max(0, Math.min(totalFrames - 1, Math.round((clickX / rect.width) * totalFrames)));
-    onSeek(targetFrame);
+    clock.seek(targetFrame);
   };
 
   const playheadPercent = (currentFrame / totalFrames) * 100;
@@ -231,33 +226,38 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
       <div className="h-14 border-b border-slate-200 px-4 flex items-center justify-between bg-slate-50/95 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onSeek(0)}
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition"
+            onClick={() => clock.seek(0)}
+            className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
             title="Jump to frame 0"
+            aria-label="Jump to first frame"
           >
             <SkipBack className="w-4 h-4" />
           </button>
 
           <button
-            onClick={onTogglePlay}
-            className={`p-2 rounded-xl transition ${
+            onClick={() => clock.toggle()}
+            className={`rounded-xl p-2 transition ${
               isPlaying
                 ? 'bg-[#ff6b35] text-white shadow-sm shadow-orange-200'
-                : 'bg-white text-slate-800 hover:bg-slate-100 border border-slate-300'
+                : 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
             }`}
             title={isPlaying ? 'Pause' : 'Play'}
+            aria-label={isPlaying ? 'Pause animation' : 'Play animation'}
+            aria-pressed={isPlaying}
           >
             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </button>
 
           <button
-            onClick={onToggleLoop}
-            className={`p-2 rounded-lg transition ${
+            onClick={() => clock.toggleLoop()}
+            className={`rounded-lg p-2 transition ${
               loop
-                ? 'text-[#ff6b35] bg-orange-100 font-bold'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200'
+                ? 'bg-orange-100 font-bold text-[#ff6b35]'
+                : 'text-slate-500 hover:bg-slate-200 hover:text-slate-900'
             }`}
-            title="Toggle Seamless Loop"
+            title="Toggle seamless loop"
+            aria-label="Toggle seamless loop"
+            aria-pressed={loop}
           >
             <Repeat className="w-4 h-4" />
           </button>

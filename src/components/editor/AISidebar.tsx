@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Sparkles, AlertCircle, Bot, User } from 'lucide-react';
-import { AISettings, ChatMessage } from '@/types/sticker';
-import { sendChatMessage } from '@/lib/aiClient';
-import { Icon, Palette } from '@/lib/funIsometric';
+import React, { useEffect, useRef, useState } from 'react';
+import { AlertCircle, Bot, Check, Send, Sparkles, User, X } from 'lucide-react';
+import type { AISettings, ChatMessage } from '@/lib/ai/types';
+import { parseAIResponse } from '@/lib/ai/actions';
+import type { AIAction, AIApplyOutcome } from '@/lib/ai/actions';
+import { sendChatMessage } from '@/lib/ai/transport';
+import type { Icon, Palette, View } from '@/lib/funIsometric/fun';
 
 interface AISidebarProps {
   isOpen: boolean;
@@ -13,15 +15,21 @@ interface AISidebarProps {
   onOpenSettings: () => void;
   icon: Icon;
   palette: Palette;
+  paletteId: string;
+  facing: View;
   selectedLayerId: string | null;
+  onApplyActions: (actions: AIAction[]) => AIApplyOutcome;
 }
 
 const QUICK_ACTIONS = [
-  '🎨 Sarankan kombinasi role warna untuk layer ini',
-  '💫 Ide motion preset yang cocok untuk stiker ini',
-  '📁 Jelaskan cara kerja Grouping & Motion Sync',
-  '📐 Berapa tebal outline & depth isometrik terbaik?',
+  'Suggest a color-role mix for this layer',
+  'Recommend a motion preset for this sticker',
+  'Explain group containers and motion sync',
+  'What slab depth and outline width should I use?',
 ];
+
+const WELCOME =
+  'Hello! I am your Motion-Track assistant. Ask me about isometric sticker concepts, role-based palettes, motion presets, and group containers — or tell me what to change and I will apply it to the project.';
 
 export const AISidebar: React.FC<AISidebarProps> = ({
   isOpen,
@@ -30,178 +38,265 @@ export const AISidebar: React.FC<AISidebarProps> = ({
   onOpenSettings,
   icon,
   palette,
+  paletteId,
+  facing,
   selectedLayerId,
+  onApplyActions,
 }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [
-    {
-      id: 'welcome',
-      sender: 'ai',
-      text: 'Hello! I am your Motion-Track Assistant. I can help with isometric sticker concepts, role-based color palettes (Slush/Riso/Candy), and keyframe motions. How can I help you today?',
-      timestamp: 0,
-    },
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { id: 'welcome', sender: 'ai', text: WELCOME, timestamp: 0 },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const scrollRef = useRef<HTMLDivElement>(null);
+  const counterRef = useRef(1);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  const msgCounterRef = useRef<number>(1);
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const relayNeedsConsent = settings.transport === 'relay' && !settings.relayConsent;
 
   const handleSend = async (promptToSend?: string) => {
-    const text = (promptToSend || input).trim();
+    const text = (promptToSend ?? input).trim();
     if (!text || isLoading) return;
 
     if (!settings.apiKey) {
-      setErrorMessage('Please configure your API Key in the Settings menu first.');
+      setErrorMessage('Add an API key in Settings before using the assistant.');
+      return;
+    }
+    if (relayNeedsConsent) {
+      setErrorMessage('Server relay needs explicit consent. Enable it in Settings or switch to direct mode.');
       return;
     }
 
     setErrorMessage(null);
-    msgCounterRef.current += 1;
-    const userMsg: ChatMessage = {
-      id: `msg-${msgCounterRef.current}`,
+    counterRef.current += 1;
+    const userMessage: ChatMessage = {
+      id: `msg-${counterRef.current}`,
       sender: 'user',
       text,
-      timestamp: msgCounterRef.current,
+      timestamp: counterRef.current,
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const history = messages;
+    setMessages((current) => [...current, userMessage]);
     setInput('');
     setIsLoading(true);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      const reply = await sendChatMessage(messages, text, settings, {
-        icon,
-        palette,
-        selectedLayerId,
-      });
-      msgCounterRef.current += 1;
-      const aiMsg: ChatMessage = {
-        id: `msg-${msgCounterRef.current}`,
-        sender: 'ai',
-        text: reply,
-        timestamp: msgCounterRef.current,
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to reach AI endpoint.';
-      setErrorMessage(msg);
+      const raw = await sendChatMessage(
+        history,
+        text,
+        settings,
+        { icon, palette, paletteId, facing, selectedLayerId },
+        controller.signal
+      );
+
+      // The model answers with { reply, actions }. Valid actions are applied
+      // immediately; anything rejected is surfaced with the message.
+      const parsed = parseAIResponse(raw);
+      const outcome =
+        parsed.actions.length > 0
+          ? onApplyActions(parsed.actions)
+          : { applied: [], skipped: [], changed: false };
+      const skipped = [...parsed.warnings, ...outcome.skipped];
+
+      counterRef.current += 1;
+      setMessages((current) => [
+        ...current,
+        {
+          id: `msg-${counterRef.current}`,
+          sender: 'ai',
+          text: parsed.reply,
+          timestamp: counterRef.current,
+          applied: outcome.applied,
+          skipped,
+        },
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to reach the AI endpoint.';
+      setErrorMessage(message);
     } finally {
+      abortRef.current = null;
       setIsLoading(false);
     }
   };
 
+  const handleStop = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsLoading(false);
+  };
+
   if (!isOpen) return null;
 
+  const statusText = !settings.apiKey
+    ? 'Not connected'
+    : settings.transport === 'relay'
+    ? `${settings.model} · relay`
+    : `${settings.model} · direct`;
+
   return (
-    <aside className="fixed right-0 top-14 bottom-0 w-full sm:w-96 max-w-full bg-white/95 backdrop-blur-xl border-l border-slate-200/80 shadow-2xl z-40 flex flex-col select-none">
-      {/* Header */}
-      <div className="p-3.5 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
+    <aside
+      aria-label="AI assistant"
+      className="fixed bottom-0 right-0 top-14 z-40 flex w-full max-w-full select-none flex-col border-l border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-xl sm:w-96"
+    >
+      <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/50 p-3.5">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm shadow-blue-200">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-200">
+            <Sparkles className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h4 className="font-mono text-xs font-bold text-slate-900">AI Assistant</h4>
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-600 font-medium">
+            <h2 className="font-mono text-xs font-bold text-slate-900">AI Assistant</h2>
+            <div className="flex items-center gap-1.5 font-mono text-[10px] font-medium text-slate-600">
               <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  settings.apiKey ? 'bg-emerald-500' : 'bg-amber-400'
+                className={`h-1.5 w-1.5 rounded-full ${
+                  settings.apiKey && !relayNeedsConsent ? 'bg-emerald-500' : 'bg-amber-400'
                 }`}
               />
-              <span>{settings.apiKey ? settings.model : 'Not Connected'}</span>
+              <span className="truncate">{statusText}</span>
             </div>
           </div>
         </div>
 
         <button
-          onClick={onClose}
-          className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+          type="button"
+          onClick={() => {
+            handleStop();
+            onClose();
+          }}
+          aria-label="Close AI assistant"
+          className="rounded-lg p-1.5 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6b35]"
         >
-          <X className="w-4 h-4" />
+          <X className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Warning if no API Key */}
-      {!settings.apiKey && (
-        <div className="p-3 bg-amber-50 border-b border-amber-200 flex items-start gap-2 text-xs font-mono text-amber-950 font-medium">
-          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+      {(!settings.apiKey || relayNeedsConsent) && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 p-3 font-mono text-xs font-medium text-amber-950"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <div className="flex-1">
-            <span>API Key is missing. Enter your AI URL & API Key in Settings.</span>
+            <span>
+              {relayNeedsConsent
+                ? 'Server relay is selected but consent is missing.'
+                : 'API key is missing. Enter your endpoint and key in Settings.'}
+            </span>
             <button
+              type="button"
               onClick={onOpenSettings}
-              className="mt-1 block underline font-bold hover:text-amber-950"
+              className="mt-1 block underline underline-offset-2 transition hover:text-amber-950"
             >
-              Open AI Settings
+              Open AI settings
             </button>
           </div>
         </div>
       )}
 
-      {/* Messages Scroll Area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs">
-        {messages.map((m) => (
+      <div ref={scrollRef} className="flex-1 space-y-3.5 overflow-y-auto p-4 text-xs">
+        {messages.map((message) => (
           <div
-            key={m.id}
-            className={`flex gap-2.5 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            key={message.id}
+            className={`flex gap-2.5 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            {m.sender !== 'user' && (
-              <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
-                <Bot className="w-3.5 h-3.5" />
+            {message.sender !== 'user' && (
+              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-100 font-bold text-blue-700">
+                <Bot className="h-3.5 w-3.5" />
               </div>
             )}
 
             <div
-              className={`p-3 rounded-2xl max-w-[85%] font-sans leading-relaxed whitespace-pre-wrap font-normal ${
-                m.sender === 'user'
-                  ? 'bg-slate-900 text-white rounded-tr-none font-medium'
-                  : 'bg-slate-50 border border-slate-300 text-slate-900 rounded-tl-none'
+              className={`max-w-[85%] rounded-2xl p-3 font-sans font-normal leading-relaxed ${
+                message.sender === 'user'
+                  ? 'rounded-tr-none bg-slate-900 font-medium text-white'
+                  : 'rounded-tl-none border border-slate-300 bg-slate-50 text-slate-900'
               }`}
             >
-              {m.text}
+              <span className="block whitespace-pre-wrap">{message.text}</span>
+
+              {message.sender === 'ai' &&
+              ((message.applied?.length ?? 0) > 0 || (message.skipped?.length ?? 0) > 0) ? (
+                <div className="mt-2 space-y-1.5 border-t border-slate-300/70 pt-2 font-mono text-[10px] leading-relaxed">
+                  {message.applied?.length ? (
+                    <div>
+                      <span className="flex items-center gap-1 font-bold text-emerald-700">
+                        <Check className="h-3 w-3" />
+                        Applied to project
+                      </span>
+                      <ul className="mt-0.5 space-y-0.5 text-emerald-800">
+                        {message.applied.map((item, index) => (
+                          <li key={`${item}-${index}`}>· {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {message.skipped?.length ? (
+                    <div>
+                      <span className="flex items-center gap-1 font-bold text-amber-700">
+                        <AlertCircle className="h-3 w-3" />
+                        Skipped
+                      </span>
+                      <ul className="mt-0.5 space-y-0.5 text-amber-800">
+                        {message.skipped.map((item, index) => (
+                          <li key={`${item}-${index}`}>· {item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
-            {m.sender === 'user' && (
-              <div className="w-6 h-6 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0 mt-0.5">
-                <User className="w-3.5 h-3.5" />
+            {message.sender === 'user' && (
+              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
+                <User className="h-3.5 w-3.5" />
               </div>
             )}
           </div>
         ))}
 
         {isLoading && (
-          <div className="flex gap-2.5">
-            <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-              <Bot className="w-3.5 h-3.5" />
+          <div className="flex gap-2.5" role="status" aria-live="polite">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+              <Bot className="h-3.5 w-3.5" />
             </div>
-            <div className="p-3 bg-slate-50 border border-slate-300 rounded-2xl rounded-tl-none font-mono text-[11px] text-slate-700 font-medium flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ff6b35] animate-pulse" />
-              <span>Generating sticker concepts...</span>
+            <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-none border border-slate-300 bg-slate-50 p-3 font-mono text-[11px] font-medium text-slate-700">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ff6b35]" />
+              <span>Thinking…</span>
             </div>
           </div>
         )}
 
         {errorMessage && (
-          <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl font-mono text-[11px] text-red-700 font-medium">
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-red-50 p-2.5 font-mono text-[11px] font-medium text-red-700"
+          >
             {errorMessage}
           </div>
         )}
       </div>
 
-      {/* Quick Actions */}
-      <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 flex flex-col gap-1">
-        <span className="text-[10px] font-mono text-slate-700 font-bold">Quick Prompts:</span>
+      <div className="flex flex-col gap-1 border-t border-slate-200 bg-slate-50 px-3 py-2">
+        <span className="font-mono text-[10px] font-bold text-slate-700">Quick prompts</span>
         <div className="flex flex-wrap gap-1">
-          {QUICK_ACTIONS.map((action, i) => (
+          {QUICK_ACTIONS.map((action) => (
             <button
-              key={i}
+              key={action}
+              type="button"
               onClick={() => handleSend(action)}
-              className="text-[10px] font-mono text-slate-800 font-semibold bg-white border border-slate-300 hover:border-[#ff6b35] hover:bg-orange-50 px-2.5 py-1 rounded-lg transition truncate max-w-full shadow-2xs"
+              className="max-w-full truncate rounded-lg border border-slate-300 bg-white px-2.5 py-1 font-mono text-[10px] font-semibold text-slate-800 shadow-sm transition hover:border-[#ff6b35] hover:bg-orange-50"
             >
               {action}
             </button>
@@ -209,25 +304,49 @@ export const AISidebar: React.FC<AISidebarProps> = ({
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="p-3 border-t border-slate-200 bg-white">
+      <div className="border-t border-slate-200 bg-white p-3">
         <div className="flex items-center gap-2">
+          <label htmlFor="ai-chat-input" className="sr-only">
+            Ask the AI assistant
+          </label>
           <input
+            id="ai-chat-input"
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Ask sticker concepts, color palettes, motion..."
-            className="flex-1 px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none text-xs bg-slate-50 text-slate-900 font-medium placeholder:text-slate-500"
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                void handleSend();
+              }
+            }}
+            placeholder="Ask a question or describe a change…"
+            className="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-500 focus:border-[#ff6b35] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6b35]/30"
           />
-          <button
-            onClick={() => handleSend()}
-            disabled={isLoading || !input.trim()}
-            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white transition shadow-sm"
-          >
-            <Send className="w-4 h-4 text-[#ff6b35]" />
-          </button>
+          {isLoading ? (
+            <button
+              type="button"
+              onClick={handleStop}
+              className="rounded-xl bg-red-600 p-2 text-white transition hover:bg-red-700"
+              aria-label="Stop generating"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleSend()}
+              disabled={!input.trim()}
+              aria-label="Send message"
+              className="rounded-xl bg-slate-900 p-2 text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-40"
+            >
+              <Send className="h-4 w-4 text-[#ff6b35]" />
+            </button>
+          )}
         </div>
+        <p className="mt-1.5 font-mono text-[10px] font-medium text-slate-500">
+          Requests are applied to the project automatically as one undo step.
+        </p>
       </div>
     </aside>
   );

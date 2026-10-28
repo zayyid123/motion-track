@@ -12,6 +12,16 @@ import {
 import { draw } from '@/lib/funIsometric/fun';
 import { padlock, chat, search, coins } from '@/lib/funIsometric/icons';
 import { PALETTES } from '@/lib/funIsometric/fun';
+import { usePrefersReducedMotion } from '@/hooks/usePlayback';
+
+const STICKER_MAP = {
+  padlock,
+  chat,
+  search,
+  coins,
+} as const;
+
+type PreviewId = keyof typeof STICKER_MAP;
 
 interface LandingViewProps {
   onOpenStudio: () => void;
@@ -19,14 +29,8 @@ interface LandingViewProps {
 
 export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [activePreviewSticker, setActivePreviewSticker] = useState<'padlock' | 'chat' | 'search' | 'coins'>('padlock');
-
-  const STICKER_MAP = {
-    padlock,
-    chat,
-    search,
-    coins,
-  };
+  const [activePreviewSticker, setActivePreviewSticker] = useState<PreviewId>('padlock');
+  const reducedMotion = usePrefersReducedMotion();
 
   // Preview animation loop for Hero Canvas
   useEffect(() => {
@@ -48,12 +52,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
       ctx.restore();
 
       frame = (frame + 1) % (currentIcon.frames || 130);
-      animId = requestAnimationFrame(render);
+      if (!reducedMotion) animId = requestAnimationFrame(render);
     };
 
-    animId = requestAnimationFrame(render);
+    render();
     return () => cancelAnimationFrame(animId);
-  }, [activePreviewSticker]);
+  }, [activePreviewSticker, reducedMotion]);
 
   return (
     <div className="min-h-screen bg-[#fafbfc] text-slate-900 selection:bg-orange-100 selection:text-orange-600 font-sans">
