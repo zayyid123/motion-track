@@ -33,7 +33,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   onAddShape,
 }) => {
   return (
-    <aside className="w-64 border-r border-slate-200/80 bg-white/95 backdrop-blur-md flex flex-col h-full overflow-y-auto select-none">
+    <aside className="w-full lg:w-64 border-r border-slate-200/80 bg-white/95 backdrop-blur-md flex flex-col h-full overflow-y-auto select-none">
       {/* Templates / Reference Stickers */}
       <div className="p-3.5 border-b border-slate-200/70">
         <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold mb-2 block">

@@ -265,7 +265,7 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
           <div className="h-4 w-px bg-slate-300 mx-1" />
 
           {/* Timecode / Frame Counter */}
-          <div className="font-mono text-xs text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-xs">
+          <div className="hidden sm:flex font-mono text-xs text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg items-center gap-1.5 shadow-xs">
             <span className="text-[#ff6b35] font-bold">
               {Math.floor(currentFrame / 60).toString().padStart(2, '0')}:
               {((currentFrame % 60) / 60 * 100).toFixed(0).padStart(2, '0')}

@@ -29,11 +29,30 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   zoom,
   onZoomChange,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dragMode, setDragMode] = useState<'move' | 'rotate' | 'resize-all' | 'resize-x' | 'resize-y' | null>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const initialAngleRef = useRef<number>(0);
   const initialDistRef = useRef<{ x: number; y: number }>({ x: 1, y: 1 });
+
+  // Attach non-passive native wheel listener to safely call e.preventDefault()
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !onZoomChange) return;
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomDelta = e.deltaY < 0 ? 0.08 : -0.08;
+      const newZoom = Math.min(2.5, Math.max(0.4, Number((zoom + zoomDelta).toFixed(2))));
+      onZoomChange(newZoom);
+    };
+
+    container.addEventListener('wheel', handleNativeWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleNativeWheel);
+    };
+  }, [zoom, onZoomChange]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -207,19 +226,10 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
     dragStartRef.current = null;
   };
 
-  // Canvas Mouse Wheel to Zoom in / Zoom out smoothly
-  const handleWheel = (e: React.WheelEvent) => {
-    if (!onZoomChange) return;
-    e.preventDefault();
-    const zoomDelta = e.deltaY < 0 ? 0.08 : -0.08;
-    const newZoom = Math.min(2.5, Math.max(0.4, Number((zoom + zoomDelta).toFixed(2))));
-    onZoomChange(newZoom);
-  };
-
   return (
     <div
+      ref={containerRef}
       tabIndex={0}
-      onWheel={handleWheel}
       className="relative flex items-center justify-center w-full h-full overflow-hidden select-none outline-none focus:ring-1 focus:ring-orange-200"
       onClick={() => onSelectLayer(null)}
       onMouseUp={handleMouseUp}

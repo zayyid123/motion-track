@@ -58,6 +58,8 @@ export function MotionTrackStudio() {
   const [zoom, setZoom] = useState<number>(1.0);
   const [outlineWidth, setOutlineWidth] = useState<number>(5);
 
+  const [mobileTab, setMobileTab] = useState<'canvas' | 'templates' | 'properties'>('canvas');
+
   // Push snapshot to undo history
   const updateIconWithHistory = (updater: (prev: Icon) => Icon) => {
     setIcon((prev) => {
@@ -540,18 +542,30 @@ export function MotionTrackStudio() {
         onDeleteSelectedLayer={() => {
           if (selectedLayerId) handleDeleteLayer(selectedLayerId);
         }}
+        activeMobileTab={mobileTab}
+        onSelectMobileTab={setMobileTab}
       />
 
       <div className="flex-1 flex overflow-hidden relative">
-        <LeftSidebar
-          icon={icon}
-          onSelectTemplate={handleSelectTemplate}
-          onUpdateFacing={handleUpdateFacing}
-          currentFacing={currentFacing}
-          onAddShape={handleAddShape}
-        />
+        {/* Left Sidebar (Desktop: always visible, Mobile: visible when mobileTab === 'templates') */}
+        <div className={`h-full ${mobileTab === 'templates' ? 'block absolute inset-0 z-20 w-full sm:w-80 bg-white' : 'hidden lg:block'}`}>
+          <LeftSidebar
+            icon={icon}
+            onSelectTemplate={(t) => {
+              handleSelectTemplate(t);
+              setMobileTab('canvas');
+            }}
+            onUpdateFacing={handleUpdateFacing}
+            currentFacing={currentFacing}
+            onAddShape={(shape) => {
+              handleAddShape(shape);
+              setMobileTab('canvas');
+            }}
+          />
+        </div>
 
-        <main className="flex-1 h-full bg-[#f8fafc] flex flex-col items-center justify-center relative overflow-hidden">
+        {/* Central Canvas Editor (Always active in background, fully visible when mobileTab === 'canvas') */}
+        <main className={`flex-1 h-full bg-[#f8fafc] flex flex-col items-center justify-center relative overflow-hidden ${mobileTab !== 'canvas' ? 'hidden lg:flex' : 'flex'}`}>
           <CanvasEditor
             icon={icon}
             palette={palette}
@@ -566,21 +580,24 @@ export function MotionTrackStudio() {
           />
         </main>
 
-        <RightSidebar
-          layers={icon.layers}
-          palette={palette}
-          selectedLayer={selectedLayer}
-          onUpdateLayer={handleUpdateLayer}
-          onUpdateLayerShapeFill={handleUpdateLayerShapeFill}
-          onUpdateLayerShapeDepth={handleUpdateLayerShapeDepth}
-          onCreateGroup={handleCreateGroup}
-          onSetLayerGroup={handleSetLayerGroup}
-          onApplyMotionToLayer={handleApplyMotionToLayer}
-          onPaletteChange={handlePaletteChange}
-          onUpdatePaletteColor={handleUpdatePaletteColor}
-          outlineWidth={outlineWidth}
-          onUpdateOutlineWidth={handleUpdateOutlineWidth}
-        />
+        {/* Right Sidebar (Desktop: always visible, Mobile: visible when mobileTab === 'properties') */}
+        <div className={`h-full ${mobileTab === 'properties' ? 'block absolute inset-0 z-20 w-full sm:w-80 bg-white' : 'hidden lg:block'}`}>
+          <RightSidebar
+            layers={icon.layers}
+            palette={palette}
+            selectedLayer={selectedLayer}
+            onUpdateLayer={handleUpdateLayer}
+            onUpdateLayerShapeFill={handleUpdateLayerShapeFill}
+            onUpdateLayerShapeDepth={handleUpdateLayerShapeDepth}
+            onCreateGroup={handleCreateGroup}
+            onSetLayerGroup={handleSetLayerGroup}
+            onApplyMotionToLayer={handleApplyMotionToLayer}
+            onPaletteChange={handlePaletteChange}
+            onUpdatePaletteColor={handleUpdatePaletteColor}
+            outlineWidth={outlineWidth}
+            onUpdateOutlineWidth={handleUpdateOutlineWidth}
+          />
+        </div>
 
         <AISidebar
           isOpen={isAISidebarOpen}

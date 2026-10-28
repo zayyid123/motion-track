@@ -61,7 +61,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
   const currentLayerMotion = selectedLayer?.motionPreset || (selectedLayer?.m ? 'custom' : 'none');
 
   return (
-    <aside className="w-80 border-l border-slate-200/80 bg-white/95 backdrop-blur-md flex flex-col h-full overflow-y-auto select-none">
+    <aside className="w-full lg:w-80 border-l border-slate-200/80 bg-white/95 backdrop-blur-md flex flex-col h-full overflow-y-auto select-none">
       {/* Motion Engine Section - PER LAYER */}
       <div className="p-4 border-b border-slate-200/70">
         <div className="flex items-center justify-between mb-2">

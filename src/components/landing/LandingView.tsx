@@ -58,23 +58,23 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
   return (
     <div className="min-h-screen bg-[#fafbfc] text-slate-900 selection:bg-orange-100 selection:text-orange-600 font-sans">
       {/* Navigation Header */}
-      <nav className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between border-b border-slate-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-2xl bg-[#ff6b35] text-white flex items-center justify-center font-mono font-bold text-sm shadow-sm shadow-orange-200">
+      <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between border-b border-slate-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-30">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-[#ff6b35] text-white flex items-center justify-center font-mono font-bold text-xs sm:text-sm shadow-sm shadow-orange-200">
             MT
           </div>
-          <span className="font-mono font-bold text-lg tracking-tight text-slate-900">
+          <span className="font-mono font-bold text-base sm:text-lg tracking-tight text-slate-900">
             motion-track
           </span>
-          <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-orange-50 text-[#ff6b35] border border-orange-200 font-bold">
+          <span className="text-[10px] sm:text-[11px] font-mono px-2 sm:px-2.5 py-0.5 rounded-full bg-orange-50 text-[#ff6b35] border border-orange-200 font-bold hidden xs:inline">
             v1.0 Studio
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onOpenStudio}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-mono text-xs font-semibold transition shadow-sm hover:shadow"
+            className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-mono text-xs font-semibold transition shadow-sm hover:shadow"
           >
             <span>Open Studio</span>
             <ArrowRight className="w-3.5 h-3.5 text-[#ff6b35]" />

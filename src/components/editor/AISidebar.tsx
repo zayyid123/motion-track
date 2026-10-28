@@ -99,7 +99,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
   if (!isOpen) return null;
 
   return (
-    <aside className="fixed right-0 top-14 bottom-0 w-84 sm:w-96 bg-white/95 backdrop-blur-xl border-l border-slate-200/80 shadow-2xl z-40 flex flex-col select-none">
+    <aside className="fixed right-0 top-14 bottom-0 w-full sm:w-96 max-w-full bg-white/95 backdrop-blur-xl border-l border-slate-200/80 shadow-2xl z-40 flex flex-col select-none">
       {/* Header */}
       <div className="p-3.5 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
         <div className="flex items-center gap-2">
