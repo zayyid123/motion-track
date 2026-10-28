@@ -39,11 +39,28 @@ describe('planFrames', () => {
     expect(planFrames(60, 0)).toHaveLength(1);
     expect(planFrames(60, 240)).toHaveLength(60);
   });
+
+  it('scales planned frame count according to speed multiplier', () => {
+    // At 2x speed, half the frames are needed to complete the loop in half the time
+    const frames2x = planFrames(180, 60, 2);
+    expect(frames2x).toHaveLength(90);
+
+    // At 0.5x speed, double the frames are needed for a smooth slow-motion loop
+    const framesHalf = planFrames(180, 60, 0.5);
+    expect(framesHalf).toHaveLength(360);
+  });
 });
 
 describe('duration helpers', () => {
   it('converts source frames to seconds', () => {
     expect(loopDurationSeconds(130)).toBeCloseTo(2.1667, 3);
     expect(formatDuration(180)).toBe('3.00s');
+  });
+
+  it('adjusts duration according to speed multiplier', () => {
+    expect(loopDurationSeconds(180, 2)).toBeCloseTo(1.5, 3);
+    expect(formatDuration(180, 2)).toBe('1.50s');
+    expect(loopDurationSeconds(180, 0.5)).toBeCloseTo(6.0, 3);
+    expect(formatDuration(180, 0.5)).toBe('6.00s');
   });
 });

@@ -73,11 +73,12 @@ export async function exportMOV(
   fps: number,
   background: string | null,
   onProgress?: ProgressFn,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  speed: number = 1
 ): Promise<ExportResult> {
   assertNotCancelled(signal);
   const ffmpeg = await getFFmpeg(onProgress);
-  const frames = planFrames(icon.frames || 180, fps);
+  const frames = planFrames(icon.frames || 180, fps, speed);
   const inputPattern = 'frame%05d.png';
   const output = 'motion-track.mov';
   const files = frames.map((_, index) => `frame${String(index + 1).padStart(5, '0')}.png`);

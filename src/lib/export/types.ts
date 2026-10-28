@@ -7,6 +7,8 @@ export interface ExportSettings {
   fps: number;
   /** null = transparent (MOV) or white (MP4/GIF where alpha is unavailable). */
   background: string | null;
+  /** Speed multiplier (e.g. 0.5x, 1x, 2x). Defaults to 1. */
+  speed?: number;
 }
 
 export type ExportStage = 'rendering' | 'encoding' | 'ready';

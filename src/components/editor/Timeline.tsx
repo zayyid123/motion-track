@@ -15,10 +15,14 @@ import {
   GripVertical,
   CornerDownRight,
   Trash2,
+  Gauge,
+  Check,
 } from 'lucide-react';
 import { Layer } from '@/lib/funIsometric';
 import type { PlaybackClock } from '@/lib/editor/clock';
-import { useClockLoop, useIsPlaying, usePlaybackFrame } from '@/hooks/usePlayback';
+import { useClockLoop, useIsPlaying, usePlaybackFrame, usePlaybackSpeed } from '@/hooks/usePlayback';
+
+const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
 interface MultiTrackTimelineProps {
   layers: ReadonlyArray<Layer>;
@@ -48,6 +52,9 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
   const currentFrame = usePlaybackFrame(clock);
   const isPlaying = useIsPlaying(clock);
   const loop = useClockLoop(clock);
+  const speed = usePlaybackSpeed(clock);
+  const [isSpeedMenuOpen, setIsSpeedMenuOpen] = useState(false);
+  const speedMenuRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(true);
   const [timelineHeight, setTimelineHeight] = useState(260); // Adjustable height in px
   const [isResizingHeight, setIsResizingHeight] = useState(false);
@@ -114,6 +121,18 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
       window.removeEventListener('mouseup', handleResizeMouseUp);
     };
   }, [isResizingControl]);
+
+  // Close speed menu on outside click
+  useEffect(() => {
+    if (!isSpeedMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (speedMenuRef.current && !speedMenuRef.current.contains(e.target as Node)) {
+        setIsSpeedMenuOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, [isSpeedMenuOpen]);
 
   // Playhead scrubbing (geser playhead kiri-kanan secara langsung)
   useEffect(() => {
@@ -261,6 +280,51 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
           >
             <Repeat className="w-4 h-4" />
           </button>
+
+          {/* Playback Speed Multiplier Popover */}
+          <div className="relative" ref={speedMenuRef}>
+            <button
+              type="button"
+              onClick={() => setIsSpeedMenuOpen((prev) => !prev)}
+              aria-label="Adjust animation playback speed"
+              title="Animation playback speed"
+              className={`flex items-center gap-1 rounded-lg border px-2 py-1.5 font-mono text-xs font-semibold transition ${
+                speed !== 1
+                  ? 'border-[#ff6b35] bg-orange-50 text-[#ff6b35] shadow-xs'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 shadow-xs'
+              }`}
+            >
+              <Gauge className="w-3.5 h-3.5 text-slate-500" />
+              <span>{speed}x</span>
+              <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+
+            {isSpeedMenuOpen && (
+              <div className="absolute bottom-full left-0 mb-1.5 w-32 rounded-xl border border-slate-200 bg-white py-1 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Speed
+                </div>
+                {SPEED_OPTIONS.map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => {
+                      clock.setSpeed(val);
+                      setIsSpeedMenuOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between px-2.5 py-1 text-xs font-mono transition hover:bg-orange-50 ${
+                      speed === val
+                        ? 'font-bold text-[#ff6b35] bg-orange-50/60'
+                        : 'text-slate-700'
+                    }`}
+                  >
+                    <span>{val}x</span>
+                    {speed === val && <Check className="h-3.5 w-3.5 text-[#ff6b35]" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="h-4 w-px bg-slate-300 mx-1" />
 

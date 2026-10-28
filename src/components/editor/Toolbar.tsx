@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Play,
@@ -21,7 +21,12 @@ import {
   X,
   Layers,
   Sliders,
+  Gauge,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
+
+const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
 interface ToolbarProps {
   projectName: string;
@@ -29,6 +34,8 @@ interface ToolbarProps {
   isPlaying: boolean;
   onTogglePlay: () => void;
   onResetFrame: () => void;
+  speed?: number;
+  onSpeedChange?: (speed: number) => void;
   onOpenSettings: () => void;
   onToggleAISidebar: () => void;
   isAISidebarOpen: boolean;
@@ -54,6 +61,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   isPlaying,
   onTogglePlay,
   onResetFrame,
+  speed = 1,
+  onSpeedChange,
   onOpenSettings,
   onToggleAISidebar,
   isAISidebarOpen,
@@ -73,6 +82,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onSelectMobileTab,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSpeedOpen, setIsSpeedOpen] = useState(false);
+  const speedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isSpeedOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (speedRef.current && !speedRef.current.contains(e.target as Node)) {
+        setIsSpeedOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, [isSpeedOpen]);
 
   return (
     <>
@@ -168,6 +190,51 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           >
             <RotateCcw className="w-4 h-4" />
           </button>
+
+          {/* Speed Selector (Desktop) */}
+          <div className="relative" ref={speedRef}>
+            <button
+              type="button"
+              onClick={() => setIsSpeedOpen((prev) => !prev)}
+              aria-label="Playback speed"
+              title="Playback speed multiplier"
+              className={`flex items-center gap-1 rounded-lg border px-2 py-1 font-mono text-xs font-semibold transition ${
+                speed !== 1
+                  ? 'border-[#ff6b35] bg-orange-50 text-[#ff6b35]'
+                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <Gauge className="w-3.5 h-3.5 text-slate-500" />
+              <span>{speed}x</span>
+              <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+
+            {isSpeedOpen && (
+              <div className="absolute top-full left-0 mt-1.5 w-32 rounded-xl border border-slate-200 bg-white py-1 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Speed
+                </div>
+                {SPEED_OPTIONS.map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => {
+                      onSpeedChange?.(val);
+                      setIsSpeedOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between px-2.5 py-1 text-xs font-mono transition hover:bg-orange-50 ${
+                      speed === val
+                        ? 'font-bold text-[#ff6b35] bg-orange-50/60'
+                        : 'text-slate-700'
+                    }`}
+                  >
+                    <span>{val}x</span>
+                    {speed === val && <Check className="h-3.5 w-3.5 text-[#ff6b35]" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="h-4 w-px bg-slate-300 mx-1" />
 
@@ -303,6 +370,29 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   <span>Delete</span>
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* Section: Playback Speed on Mobile */}
+          <div>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
+              Animation Speed:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {SPEED_OPTIONS.map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => onSpeedChange?.(val)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono transition border ${
+                    speed === val
+                      ? 'bg-[#ff6b35] border-[#ff6b35] text-white font-bold shadow-xs'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
+                  }`}
+                >
+                  {val}x
+                </button>
+              ))}
             </div>
           </div>
 

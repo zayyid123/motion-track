@@ -18,23 +18,26 @@ a `.webm` extension when the MediaRecorder fallback produced WebM.
 ## Frame planning
 
 `src/lib/export/frames.ts` maps the 60 FPS source clip to the requested output
-frame rate.
+frame rate and speed multiplier.
 
 ```ts
-const count = Math.max(1, Math.round((sourceFrames * fps) / 60));
+const count = Math.max(1, Math.round((sourceFrames * fps) / (60 * speed)));
 const frame = Math.min(sourceFrames - 1, Math.round((index * sourceFrames) / count));
 ```
 
-- The complete loop is always exported. The previous pipeline truncated a
-  130-frame clip at 30 FPS to a half loop; it now produces 65 frames covering
-  all 130 source frames.
+- The complete loop is always exported with seamless loop wrap-around.
+- An optional speed multiplier (0.5x, 1x, 1.5x, 2x) scales planned frames and duration so that exported animations play at the chosen tempo.
 - The boundary frame is not duplicated, so the loop does not stutter.
 - FPS is clamped to 1–60 and the source frame count to at least 1.
-- `loopDurationSeconds()` and `formatDuration()` use the 60 FPS source clock.
+- `loopDurationSeconds()` and `formatDuration()` use the 60 FPS source clock scaled by the speed multiplier.
 
 Every encoder renders through `renderFrameToCanvas()` in `render.ts`, which
 paints an offscreen canvas at the requested width and height with the selected
 background.
+
+### Speed options
+- **Preview playback**: Multipliers (0.25x, 0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x) adjustable via Timeline transport controls and Desktop toolbar.
+- **Render export**: Multipliers (0.5x, 1x, 1.5x, 2x) adjustable in the Export modal, with real-time recalculation of duration and frame counts.
 
 ### Background options
 - **Presets**: White (`#ffffff`), Dark (`#0f172a`), Orange (`#ff6b35`).

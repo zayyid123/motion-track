@@ -9,6 +9,7 @@ import {
   exportMOV,
   exportMP4,
   formatDuration,
+  planFrames,
 } from '@/lib/export';
 import type { ExportFormat, ExportProgress, ExportResult } from '@/lib/export';
 import { Modal } from '@/components/ui/Modal';
@@ -18,6 +19,7 @@ interface ExportModalProps {
   onClose: () => void;
   icon: Icon;
   palette: Palette;
+  initialSpeed?: number;
 }
 
 const FORMATS: Array<{ id: ExportFormat; label: string; detail: string }> = [
@@ -46,6 +48,13 @@ const RESOLUTIONS = [
 ];
 
 const FPS_OPTIONS = [24, 30, 60];
+
+const SPEED_OPTIONS: Array<{ value: number; label: string; hint: string }> = [
+  { value: 0.5, label: '0.5x', hint: 'Half' },
+  { value: 1, label: '1x', hint: 'Normal' },
+  { value: 1.5, label: '1.5x', hint: 'Fast' },
+  { value: 2, label: '2x', hint: 'Double' },
+];
 
 const BACKGROUND_PRESETS: Array<{ id: string; value: string | null; label: string; swatch: string }> = [
   {
@@ -76,10 +85,17 @@ const stageLabel = (stage: ExportProgress['stage']): string => {
   return 'Finishing';
 };
 
-export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, icon, palette }) => {
+export const ExportModal: React.FC<ExportModalProps> = ({
+  isOpen,
+  onClose,
+  icon,
+  palette,
+  initialSpeed = 1,
+}) => {
   const [format, setFormat] = useState<ExportFormat>('mp4');
   const [resolution, setResolution] = useState(1080);
   const [fps, setFps] = useState(30);
+  const [exportSpeed, setExportSpeed] = useState<number>(initialSpeed);
   const [backgroundId, setBackgroundId] = useState<string>('white');
   const [customColor, setCustomColor] = useState<string>('#6366f1');
   const [hexInput, setHexInput] = useState<string>('6366F1');
@@ -137,7 +153,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, icon,
     const onProgress = (next: ExportProgress) => setProgress(next);
 
     try {
-      const args = [icon, palette, resolution, resolution, fps, background, onProgress, controller.signal] as const;
+      const args = [icon, palette, resolution, resolution, fps, background, onProgress, controller.signal, exportSpeed] as const;
       const output =
         format === 'gif'
           ? await exportGIF(...args)
@@ -217,7 +233,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, icon,
       footer={
         <div className="flex items-center justify-between gap-2">
           <span className="hidden text-[10px] font-mono text-slate-500 sm:block">
-            {formatDuration(totalFrames)} loop · {Math.round((totalFrames * fps) / 60)} frames at {fps} fps
+            {formatDuration(totalFrames, exportSpeed)} loop · {planFrames(totalFrames, fps, exportSpeed).length} frames at {fps} fps ({exportSpeed}x speed)
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -321,6 +337,31 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, icon,
                 }`}
               >
                 {value} fps
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend className="mb-1.5 block font-semibold text-slate-800">Animation speed</legend>
+          <div className="grid grid-cols-4 gap-1.5">
+            {SPEED_OPTIONS.map((entry) => (
+              <button
+                key={entry.value}
+                type="button"
+                aria-pressed={exportSpeed === entry.value}
+                onClick={() => {
+                  setExportSpeed(entry.value);
+                  resetResult();
+                }}
+                className={`rounded-xl border py-2 text-center transition ${
+                  exportSpeed === entry.value
+                    ? 'border-slate-900 bg-slate-900 font-bold text-white shadow-sm'
+                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <div className="text-[11px] font-bold">{entry.label}</div>
+                <div className="text-[9px] opacity-75">{entry.hint}</div>
               </button>
             ))}
           </div>

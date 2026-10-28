@@ -17,6 +17,10 @@ export function useClockLoop(clock: PlaybackClock): boolean {
   return useSyncExternalStore(clock.subscribeLoop, clock.getLoop, () => true);
 }
 
+export function usePlaybackSpeed(clock: PlaybackClock): number {
+  return useSyncExternalStore(clock.subscribeSpeed, clock.getSpeed, () => 1);
+}
+
 const subscribeReducedMotion = (onChange: () => void): (() => void) => {
   if (typeof window === 'undefined') return () => {};
   const media = window.matchMedia(REDUCED_MOTION_QUERY);

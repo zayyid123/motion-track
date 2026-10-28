@@ -15,10 +15,11 @@ export async function exportGIF(
   fps: number,
   background: string | null,
   onProgress?: ProgressFn,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  speed: number = 1
 ): Promise<ExportResult> {
   const solidBg = background ?? '#ffffff';
-  const frames = planFrames(icon.frames || 180, fps);
+  const frames = planFrames(icon.frames || 180, fps, speed);
   const canvases: HTMLCanvasElement[] = [];
 
   for (let index = 0; index < frames.length; index += 1) {

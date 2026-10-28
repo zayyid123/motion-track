@@ -9,6 +9,7 @@ export class PlaybackClock {
   private frames = 180;
   private playing = false;
   private loop = true;
+  private speed = 1;
   private lastTime = 0;
   private accumulator = 0;
   private raf: number | null = null;
@@ -16,11 +17,13 @@ export class PlaybackClock {
   private frameListeners = new Set<ClockListener>();
   private playingListeners = new Set<ClockListener>();
   private loopListeners = new Set<ClockListener>();
+  private speedListeners = new Set<ClockListener>();
 
   getFrame = (): number => this.frame;
   getFrames = (): number => this.frames;
   getPlaying = (): boolean => this.playing;
   getLoop = (): boolean => this.loop;
+  getSpeed = (): number => this.speed;
 
   subscribeFrame = (listener: ClockListener): (() => void) => {
     this.frameListeners.add(listener);
@@ -37,6 +40,11 @@ export class PlaybackClock {
     return () => this.loopListeners.delete(listener);
   };
 
+  subscribeSpeed = (listener: ClockListener): (() => void) => {
+    this.speedListeners.add(listener);
+    return () => this.speedListeners.delete(listener);
+  };
+
   private emitFrame(): void {
     for (const listener of this.frameListeners) listener();
   }
@@ -47,6 +55,17 @@ export class PlaybackClock {
 
   private emitLoop(): void {
     for (const listener of this.loopListeners) listener();
+  }
+
+  private emitSpeed(): void {
+    for (const listener of this.speedListeners) listener();
+  }
+
+  setSpeed(speed: number): void {
+    const next = Math.max(0.1, Math.min(10, Number(speed) || 1));
+    if (next === this.speed) return;
+    this.speed = next;
+    this.emitSpeed();
   }
 
   setFrames(frames: number): void {
@@ -114,17 +133,18 @@ export class PlaybackClock {
     const step = 1000 / 60;
     const delta = Math.max(0, time - this.lastTime);
     this.lastTime = time;
-    this.accumulator += delta;
+    this.accumulator += delta * this.speed;
 
     let changed = false;
     // Cap catch-up work so a background tab cannot freeze the UI on return.
-    let budget = 4;
+    const maxBudget = Math.max(8, Math.ceil(4 * this.speed));
+    let budget = maxBudget;
     while (this.accumulator >= step && budget-- > 0) {
       this.accumulator -= step;
       this.frame += 1;
       changed = true;
     }
-    if (this.accumulator > step * 4) this.accumulator = 0;
+    if (this.accumulator > step * maxBudget) this.accumulator = 0;
 
     if (this.frame >= this.frames) {
       if (this.loop) {
@@ -146,5 +166,6 @@ export class PlaybackClock {
     this.frameListeners.clear();
     this.playingListeners.clear();
     this.loopListeners.clear();
+    this.speedListeners.clear();
   }
 }

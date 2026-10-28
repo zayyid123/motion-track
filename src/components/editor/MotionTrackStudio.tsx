@@ -10,7 +10,7 @@ import { AISidebar } from '@/components/editor/AISidebar';
 import { SettingsModal } from '@/components/editor/SettingsModal';
 import { ExportModal } from '@/components/editor/ExportModal';
 import { useToast } from '@/components/ui/toast';
-import { useIsPlaying } from '@/hooks/usePlayback';
+import { useIsPlaying, usePlaybackSpeed } from '@/hooks/usePlayback';
 import { PlaybackClock } from '@/lib/editor/clock';
 import { useStudioState } from '@/lib/editor/useStudioState';
 import { DEFAULT_AI_SETTINGS, loadAISettings, saveAISettings } from '@/lib/ai/settings';
@@ -30,6 +30,7 @@ export function MotionTrackStudio() {
   const { actions } = studio;
   const { undo, redo, selectedLayerId } = studio;
   const isPlaying = useIsPlaying(clock);
+  const speed = usePlaybackSpeed(clock);
   const { toast } = useToast();
 
   const [mobileTab, setMobileTab] = useState<'canvas' | 'templates' | 'properties'>('canvas');
@@ -162,6 +163,8 @@ export function MotionTrackStudio() {
         isPlaying={isPlaying}
         onTogglePlay={() => clock.toggle()}
         onResetFrame={() => clock.seek(0)}
+        speed={speed}
+        onSpeedChange={(s) => clock.setSpeed(s)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onToggleAISidebar={() => setIsAISidebarOpen((open) => !open)}
         isAISidebarOpen={isAISidebarOpen}
@@ -290,10 +293,12 @@ export function MotionTrackStudio() {
       />
 
       <ExportModal
+        key={isExportOpen ? `export-${speed}` : 'export-closed'}
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
         icon={icon}
         palette={studio.palette}
+        initialSpeed={speed}
       />
     </div>
   );

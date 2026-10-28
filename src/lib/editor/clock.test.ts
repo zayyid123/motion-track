@@ -78,4 +78,28 @@ describe('PlaybackClock', () => {
 
     clock.dispose();
   });
+
+  it('updates playback speed and notifies listeners', () => {
+    const clock = new PlaybackClock();
+    let emissions = 0;
+    clock.subscribeSpeed(() => {
+      emissions += 1;
+    });
+
+    expect(clock.getSpeed()).toBe(1);
+    clock.setSpeed(1.5);
+    expect(clock.getSpeed()).toBe(1.5);
+    expect(emissions).toBe(1);
+
+    // Setting the same speed should not emit
+    clock.setSpeed(1.5);
+    expect(emissions).toBe(1);
+
+    // Clamps invalid or negative speeds
+    clock.setSpeed(-5);
+    expect(clock.getSpeed()).toBe(0.1);
+    expect(emissions).toBe(2);
+
+    clock.dispose();
+  });
 });

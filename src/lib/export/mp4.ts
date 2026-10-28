@@ -37,7 +37,8 @@ async function exportWithWebCodecs(
   fps: number,
   background: string | null,
   onProgress?: ProgressFn,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  speed: number = 1
 ): Promise<ExportResult> {
   const codec = await pickCodec(width, height, fps);
   if (!codec) throw new Error('No supported H.264 encoder configuration.');
@@ -67,7 +68,7 @@ async function exportWithWebCodecs(
   });
 
   try {
-    const frames = planFrames(icon.frames || 180, fps);
+    const frames = planFrames(icon.frames || 180, fps, speed);
     const duration = Math.round(1_000_000 / fps);
 
     for (let index = 0; index < frames.length; index += 1) {
@@ -122,7 +123,8 @@ async function exportWithMediaRecorder(
   fps: number,
   background: string | null,
   onProgress?: ProgressFn,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  speed: number = 1
 ): Promise<ExportResult> {
   if (typeof MediaRecorder === 'undefined') throw new Error('This browser does not support video recording.');
 
@@ -158,7 +160,7 @@ async function exportWithMediaRecorder(
     recorder.onerror = () => reject(new Error('Video recorder failed.'));
   });
 
-  const frames = planFrames(icon.frames || 180, fps);
+  const frames = planFrames(icon.frames || 180, fps, speed);
   const frameDuration = 1000 / fps;
 
   try {
@@ -215,12 +217,13 @@ export async function exportMP4(
   fps: number,
   background: string | null,
   onProgress?: ProgressFn,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  speed: number = 1
 ): Promise<ExportResult> {
   const solidBg = background ?? '#ffffff';
   const codec = await pickCodec(width, height, fps);
   if (codec) {
-    return exportWithWebCodecs(icon, palette, width, height, fps, solidBg, onProgress, signal);
+    return exportWithWebCodecs(icon, palette, width, height, fps, solidBg, onProgress, signal, speed);
   }
-  return exportWithMediaRecorder(icon, palette, width, height, fps, solidBg, onProgress, signal);
+  return exportWithMediaRecorder(icon, palette, width, height, fps, solidBg, onProgress, signal, speed);
 }
