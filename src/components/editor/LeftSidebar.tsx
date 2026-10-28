@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { StickerProject, StickerLayer, ViewDirection, ShapeType } from '@/types/sticker';
 import { SAMPLE_PROJECTS } from '@/data/sampleStickers';
+import { resolveColor } from '@/lib/renderer';
 
 interface LeftSidebarProps {
   project: StickerProject;
@@ -149,7 +150,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                 >
                   <div className="flex items-center gap-2 truncate">
                     <span className="w-2.5 h-2.5 rounded-full border border-slate-400 shrink-0" style={{
-                      backgroundColor: layer.customHex || '#ff6b35',
+                      backgroundColor: layer.customHex || resolveColor(layer.fillRole, project),
                     }} />
                     <span className="truncate font-semibold text-slate-900">{layer.name}</span>
                   </div>

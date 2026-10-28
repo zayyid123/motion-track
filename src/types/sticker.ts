@@ -33,9 +33,12 @@ export interface StickerLayer {
   rotation: number;
   fillRole: RoleColorKey;
   sideColorRole?: RoleColorKey;
+  outlineRole?: RoleColorKey;
   outlineWidth: number;
   parentId?: string;
-  customHex?: string;
+  customHex?: string; // Custom fill color hex
+  customSideHex?: string; // Custom shadow / side slab color hex
+  customOutlineHex?: string; // Custom border / outline color hex
   points?: [number, number][]; // for polygon or custom points
 }
 

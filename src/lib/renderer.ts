@@ -112,10 +112,16 @@ function renderLayer(
   extrudeVector: { x: number; y: number }
 ) {
   const fillColor = layer.customHex || resolveColor(layer.fillRole, project);
-  const sideColor = layer.sideColorRole
-    ? resolveColor(layer.sideColorRole, project)
-    : resolveColor('deep', project);
-  const inkColor = resolveColor('ink', project, '#111827');
+  const sideColor =
+    layer.customSideHex ||
+    (layer.sideColorRole
+      ? resolveColor(layer.sideColorRole, project)
+      : resolveColor('deep', project));
+  const inkColor =
+    layer.customOutlineHex ||
+    (layer.outlineRole
+      ? resolveColor(layer.outlineRole, project)
+      : resolveColor('ink', project, '#111827'));
 
   ctx.save();
   ctx.translate(layer.x, layer.y);
