@@ -33,6 +33,24 @@ Memudahkan siapa pun membuat stiker isometrik animasi yang terlihat konsisten, m
 5. **Portabel:** proyek dapat disimpan dan dibuka kembali sebagai file lokal.
 6. **Aksesibel:** kontrol dapat digunakan melalui keyboard, label kontrol jelas, dan hasil menghormati preferensi reduced motion.
 
+### Karakter & Panduan Desain Antarmuka (Design System)
+
+- **Minimalist / Swiss-inspired:**
+  - Background dominan putih bersih (`#ffffff` / neutral-50) dengan garis grid halus atau border tipis neutral.
+  - Minim elemen dekoratif yang berlebihan, fokus utama langsung pada kanvas stiker dan kontrol esensial.
+- **Bold Typography:**
+  - Headline besar, judul section, kode, dan badge menggunakan font monospace (seperti Geist Mono / JetBrains Mono) yang memberikan karakter *developer-tool* presisi dan tajam.
+  - Hirarki teks yang kontras tinggi dan mudah dipindai (*scanability*).
+- **Isometric Sticker Signature Illustration:**
+  - Maskot/Hero ilustrasi stiker isometrik: kombinasi pensil dan kertas dengan sudut 3D akurat, outline hitam tebal (`5px stroke`), sisi slab terkesan padat, serta palet warna pastel yang lembut.
+- **Rounded UI:**
+  - Kontainer, panel, modal, tombol aksi, dan kotak command menggunakan sudut membulat (*rounded-xl* / *rounded-2xl* hingga *pill-shaped*) yang ramah dan modern.
+- **Soft Neutral Palette with Pink Accent:**
+  - Dominasi warna: Putih murni, abu-abu netral (`#f8fafc`, `#f1f5f9`, border `#e2e8f0`).
+  - Aksen utama: Pink lembut / hot pastel pink (contoh: `#f472b6`, `#ec4899`, atau `#fb7185`) sebagai titik fokus tombol CTA, active state, dan badge penting.
+- **Developer-Focused Landing Section:**
+  - Landing page menyajikan panduan instalasi/penggunaan langsung dalam komponen command box (terminal-style) dengan fitur *one-click copy*, contoh kode, dan tombol langsung lompat ke Studio Editor.
+
 ## 4. Sasaran dan bukan sasaran
 
 ### Sasaran MVP
