@@ -495,7 +495,7 @@ export function MotionTrackStudio() {
             setSelectedLayerId(parsed.layers[0]?.id || null);
           }
         } catch {
-          alert('Format file JSON tidak valid.');
+          alert('Invalid JSON project file format.');
         }
       };
       reader.readAsText(file);

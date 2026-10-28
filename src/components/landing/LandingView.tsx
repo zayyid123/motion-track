@@ -2,18 +2,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Terminal,
-  Copy,
-  Check,
   Sparkles,
   ArrowRight,
   Layers,
-  Palette as PaletteIcon,
   Film,
   Bot,
+  Boxes,
 } from 'lucide-react';
 import { draw } from '@/lib/funIsometric/fun';
-import { padlock } from '@/lib/funIsometric/icons';
+import { padlock, chat, search, coins } from '@/lib/funIsometric/icons';
 import { PALETTES } from '@/lib/funIsometric/fun';
 
 interface LandingViewProps {
@@ -21,14 +18,14 @@ interface LandingViewProps {
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
-  const [copied, setCopied] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const command = 'npx skills add kelvinkn17/skills@fun-isometric';
+  const [activePreviewSticker, setActivePreviewSticker] = useState<'padlock' | 'chat' | 'search' | 'coins'>('padlock');
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(command);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const STICKER_MAP = {
+    padlock,
+    chat,
+    search,
+    coins,
   };
 
   // Preview animation loop for Hero Canvas
@@ -40,27 +37,28 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
 
     let frame = 0;
     let animId: number;
+    const currentIcon = STICKER_MAP[activePreviewSticker];
 
     const render = () => {
-      ctx.clearRect(0, 0, 440, 440);
+      ctx.clearRect(0, 0, 480, 480);
       ctx.save();
-      const scale = 440 / 500;
+      const scale = 480 / 500;
       ctx.scale(scale, scale);
-      draw(ctx, padlock, frame, PALETTES.slush);
+      draw(ctx, currentIcon, frame, PALETTES.slush);
       ctx.restore();
 
-      frame = (frame + 1) % (padlock.frames || 130);
+      frame = (frame + 1) % (currentIcon.frames || 130);
       animId = requestAnimationFrame(render);
     };
 
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, []);
+  }, [activePreviewSticker]);
 
   return (
     <div className="min-h-screen bg-[#fafbfc] text-slate-900 selection:bg-orange-100 selection:text-orange-600 font-sans">
       {/* Navigation Header */}
-      <nav className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between border-b border-slate-200/60 bg-white/80 backdrop-blur-md sticky top-0 z-30">
+      <nav className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between border-b border-slate-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-2xl bg-[#ff6b35] text-white flex items-center justify-center font-mono font-bold text-sm shadow-sm shadow-orange-200">
             MT
@@ -68,8 +66,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
           <span className="font-mono font-bold text-lg tracking-tight text-slate-900">
             motion-track
           </span>
-          <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 font-medium">
-            isometric kit
+          <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-orange-50 text-[#ff6b35] border border-orange-200 font-bold">
+            v1.0 Studio
           </span>
         </div>
 
@@ -87,43 +85,50 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
       {/* Hero Section */}
       <section className="max-w-6xl mx-auto px-6 pt-16 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Left Column: Bold Typography & Developer Details */}
+          {/* Left Column: Bold Typography & Studio Intro */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-mono font-medium">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-800 text-xs font-mono font-semibold">
               <Sparkles className="w-3.5 h-3.5 text-[#ff6b35]" />
-              <span>Animated Isometric Sticker Studio</span>
+              <span>Interactive Isometric Sticker Studio</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-mono font-black tracking-tight text-slate-900 leading-[1.1]">
-              Stickers that <span className="text-[#ff6b35] underline decoration-[#ffb703]">move</span> on real keyframes.
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-mono font-black tracking-tight text-slate-950 leading-[1.1]">
+              Slab stickers that <span className="text-[#ff6b35] underline decoration-[#ffb703]">move</span> on real keyframes.
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-sans max-w-xl">
-              Desain stiker slab isometrik dengan garis hitam tebal, palet warna oranye hangat & biru elektrik yang khas, serta animasi After Effects keyframe presets. Ekspor instan ke MOV, MP4, atau GIF.
+            <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-sans max-w-xl font-normal">
+              Create isometric animated 3D slab stickers with bold outlines, role-based color palettes, multi-track timeline, and export directly to MOV ProRes, MP4, or GIF.
             </p>
 
-            {/* Developer-Focused CLI Command Box */}
+            {/* Quick Interactive Sticker Selector */}
             <div className="pt-2">
-              <div className="flex items-center justify-between bg-white border border-slate-300 rounded-2xl p-2.5 sm:p-3 font-mono text-xs max-w-xl shadow-xs">
-                <div className="flex items-center gap-2.5 text-slate-800 overflow-x-auto py-1">
-                  <Terminal className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span className="text-slate-600 font-bold select-none">$</span>
-                  <span className="font-semibold text-slate-900">{command}</span>
-                </div>
-                <button
-                  onClick={handleCopy}
-                  className="p-2 text-slate-600 hover:text-slate-950 hover:bg-slate-50 rounded-xl transition border border-transparent hover:border-slate-300 shrink-0 ml-2"
-                  title="Salin perintah instalasi skill"
-                >
-                  {copied ? <Check className="w-4 h-4 text-emerald-600 font-bold" /> : <Copy className="w-4 h-4" />}
-                </button>
-              </div>
-              <span className="text-[11px] font-mono text-slate-600 font-medium block mt-2 ml-1">
-                Diadaptasi dari ekosistem agen skill <a href="https://github.com/kelvinkn17/skills" target="_blank" rel="noreferrer" className="underline hover:text-[#ff6b35] font-semibold">kelvinkn17/skills</a> (MIT License).
+              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold block mb-2">
+                Select Interactive Sticker Preview:
               </span>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'padlock', name: 'Padlock (Clasp)', icon: '🔒' },
+                  { id: 'chat', name: 'Chat Bot (Wobble)', icon: '💬' },
+                  { id: 'search', name: 'Search Lens (Twist)', icon: '🔍' },
+                  { id: 'coins', name: 'Gold Coin (Bounce)', icon: '🪙' },
+                ].map((stk) => (
+                  <button
+                    key={stk.id}
+                    onClick={() => setActivePreviewSticker(stk.id as 'padlock' | 'chat' | 'search' | 'coins')}
+                    className={`px-3 py-2 rounded-xl border text-xs font-mono transition flex items-center gap-1.5 ${
+                      activePreviewSticker === stk.id
+                        ? 'bg-orange-50 border-[#ff6b35] text-slate-950 font-bold shadow-xs'
+                        : 'bg-white border-slate-300 hover:border-slate-400 text-slate-700'
+                    }`}
+                  >
+                    <span>{stk.icon}</span>
+                    <span>{stk.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* CTA Buttons */}
+            {/* Primary CTA */}
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <button
                 onClick={onOpenStudio}
@@ -135,24 +140,24 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
             </div>
           </div>
 
-          {/* Right Column: Isometric Signature Sticker Preview */}
+          {/* Right Column: Isometric Canvas Preview */}
           <div className="lg:col-span-5 flex justify-center">
             <div className="relative">
               {/* Subtle background glow */}
               <div className="absolute -inset-4 bg-gradient-to-tr from-orange-100 to-blue-100 rounded-3xl -z-10 blur-xl opacity-70" />
 
-              <div className="w-[360px] sm:w-[420px] h-[360px] sm:h-[420px] rounded-3xl border border-slate-200/90 bg-white shadow-xl flex items-center justify-center p-4 overflow-hidden">
+              <div className="w-[360px] sm:w-[440px] h-[360px] sm:h-[440px] rounded-3xl border border-slate-300 bg-white shadow-xl flex items-center justify-center p-4 overflow-hidden">
                 <canvas
                   ref={canvasRef}
-                  width={440}
-                  height={440}
+                  width={480}
+                  height={480}
                   className="w-full h-full block object-contain pointer-events-none"
                 />
               </div>
 
-              <div className="absolute -bottom-4 right-4 bg-white/95 backdrop-blur-md border border-slate-200 px-3.5 py-1.5 rounded-xl shadow-sm text-[11px] font-mono text-slate-600 flex items-center gap-2">
+              <div className="absolute -bottom-4 right-4 bg-white/95 backdrop-blur-md border border-slate-300 px-3.5 py-1.5 rounded-xl shadow-sm text-[11px] font-mono text-slate-700 font-bold flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Live Canvas • 60 FPS Keyframes</span>
+                <span>Live 60 FPS Keyframes Canvas</span>
               </div>
             </div>
           </div>
@@ -160,57 +165,59 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
       </section>
 
       {/* Feature Highlights Grid */}
-      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-slate-300">
+      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-slate-200">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="p-6 rounded-2xl bg-white border border-slate-300 shadow-xs space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
             <div className="w-8 h-8 rounded-xl bg-orange-100 text-[#ff6b35] flex items-center justify-center mb-4">
               <Layers className="w-4 h-4" />
             </div>
-            <h3 className="font-mono font-bold text-sm text-slate-900">Isometric Slab System</h3>
+            <h3 className="font-mono font-bold text-sm text-slate-900">Multi-Track Timeline</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium">
-              Ekstrusi 3D solid dengan garis tebal 5px, bayangan terarah, dan 4 sudut pandang: right, left, front, serta flat.
+              Control in-point and out-point timing (trimming) for each layer with an interactive multi-track layout.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-300 shadow-xs space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
             <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
-              <PaletteIcon className="w-4 h-4" />
+              <Boxes className="w-4 h-4" />
             </div>
-            <h3 className="font-mono font-bold text-sm text-slate-900">Warm Orange & Blue</h3>
+            <h3 className="font-mono font-bold text-sm text-slate-900">Group Container</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium">
-              Palet ikonik Slush: Tangerine orange cerah dipadukan dengan aksen electric cobalt blue dan soft sky tints.
+              Flexible group hierarchy to synchronize and move multiple layers together effortlessly via drag & drop.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-300 shadow-xs space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
             <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4">
               <Film className="w-4 h-4" />
             </div>
-            <h3 className="font-mono font-bold text-sm text-slate-900">MOV / MP4 / GIF Export</h3>
+            <h3 className="font-mono font-bold text-sm text-slate-900">High-Res Video Export</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium">
-              Rendering animasi stiker bergerak resolusi tinggi bersih tanpa elemen editor yang siap digunakan di produk web & video.
+              Render ultra-smooth 60 FPS animation up to Full HD (1080p) and 2K QHD (1440p) in MOV, MP4, or GIF.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-300 shadow-xs space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
             <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4">
               <Bot className="w-4 h-4" />
             </div>
-            <h3 className="font-mono font-bold text-sm text-slate-900">Custom AI Chat</h3>
+            <h3 className="font-mono font-bold text-sm text-slate-900">Custom AI Assistant</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium">
-              Sidebar asisten AI dengan endpoint URL & API Key Anda sendiri untuk brainstorming ide stiker dan kombinasi gerak.
+              AI sidebar assistant with custom Base URL & API Key for live design suggestions, motion ideas, and palette advice.
             </p>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="max-w-6xl mx-auto px-6 py-8 border-t border-slate-300 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-slate-600 font-medium gap-4">
+      <footer className="max-w-6xl mx-auto px-6 py-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-slate-600 font-medium gap-4">
         <div>
-          © 2026 motion-track. Minimalist Swiss-inspired Isometric Engine.
+          © 2026 motion-track. Minimalist Swiss-inspired Animated Isometric Engine.
         </div>
-        <div>
-          Inspired by <a href="https://github.com/kelvinkn17/skills" target="_blank" rel="noreferrer" className="underline hover:text-[#ff6b35] font-semibold">fun-isometric</a> (MIT).
+        <div className="flex items-center gap-4">
+          <button onClick={onOpenStudio} className="underline hover:text-[#ff6b35]">
+            Open Studio
+          </button>
         </div>
       </footer>
     </div>

@@ -36,7 +36,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
     {
       id: 'welcome',
       sender: 'ai',
-      text: 'Halo! Saya asisten Motion-Track. Saya dapat memberikan saran konsep stiker isometrik, kombinasi palet warna Riso/Candy, hingga preset motion After Effects. Ada yang bisa saya bantu?',
+      text: 'Hello! I am your Motion-Track Assistant. I can help with isometric sticker concepts, role-based color palettes (Slush/Riso/Candy), and keyframe motions. How can I help you today?',
       timestamp: 0,
     },
   ]);
@@ -57,7 +57,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
     if (!text || isLoading) return;
 
     if (!settings.apiKey) {
-      setErrorMessage('Harap atur API Key di menu Settings terlebih dahulu.');
+      setErrorMessage('Please configure your API Key in the Settings menu first.');
       return;
     }
 
@@ -89,7 +89,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
       };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal menghubungi endpoint AI.';
+      const msg = err instanceof Error ? err.message : 'Failed to reach AI endpoint.';
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
@@ -114,7 +114,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
                   settings.apiKey ? 'bg-emerald-500' : 'bg-amber-400'
                 }`}
               />
-              <span>{settings.apiKey ? settings.model : 'Belum Terhubung'}</span>
+              <span>{settings.apiKey ? settings.model : 'Not Connected'}</span>
             </div>
           </div>
         </div>
@@ -132,12 +132,12 @@ export const AISidebar: React.FC<AISidebarProps> = ({
         <div className="p-3 bg-amber-50 border-b border-amber-200 flex items-start gap-2 text-xs font-mono text-amber-950 font-medium">
           <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <span>API Key belum diisi. Masukkan URL & API Key AI di bagian settings.</span>
+            <span>API Key is missing. Enter your AI URL & API Key in Settings.</span>
             <button
               onClick={onOpenSettings}
               className="mt-1 block underline font-bold hover:text-amber-950"
             >
-              Buka Pengaturan AI
+              Open AI Settings
             </button>
           </div>
         </div>
@@ -181,7 +181,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
             </div>
             <div className="p-3 bg-slate-50 border border-slate-300 rounded-2xl rounded-tl-none font-mono text-[11px] text-slate-700 font-medium flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#ff6b35] animate-pulse" />
-              <span>Memproses ide stiker...</span>
+              <span>Generating sticker concepts...</span>
             </div>
           </div>
         )}
@@ -217,7 +217,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Tanyakan konsep stiker, palet warna..."
+            placeholder="Ask sticker concepts, color palettes, motion..."
             className="flex-1 px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none text-xs bg-slate-50 text-slate-900 font-medium placeholder:text-slate-500"
           />
           <button

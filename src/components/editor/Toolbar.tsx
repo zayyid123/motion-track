@@ -81,7 +81,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <input
           type="text"
           value={project.name}
-          placeholder="Nama Proyek..."
+          placeholder="Project Name..."
           onChange={(e) => onProjectNameChange(e.target.value)}
           className="font-mono text-sm px-2.5 py-1 rounded-lg border border-slate-300 hover:border-slate-400 focus:border-[#ff6b35] focus:outline-none bg-slate-50 transition w-44 sm:w-60 text-slate-900 font-bold placeholder:text-slate-500"
         />
@@ -185,7 +185,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <button
           onClick={onLoadJSON}
           className="p-2 rounded-xl text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition border border-slate-300 bg-white"
-          title="Buka File Proyek JSON"
+          title="Open JSON Project File"
         >
           <FolderOpen className="w-4 h-4" />
         </button>
@@ -193,7 +193,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <button
           onClick={onSaveJSON}
           className="p-2 rounded-xl text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition border border-slate-300 bg-white"
-          title="Simpan Proyek JSON"
+          title="Save JSON Project File"
         >
           <Save className="w-4 h-4" />
         </button>

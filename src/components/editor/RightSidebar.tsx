@@ -81,7 +81,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
         {selectedLayer ? (
           <>
             <p className="text-[10px] text-slate-500 font-mono mb-2">
-              Preset gerakan aktif untuk: <strong className="text-slate-800">{selectedLayer.name || selectedLayer.id}</strong>
+              Active motion for: <strong className="text-slate-800">{selectedLayer.name || selectedLayer.id}</strong>
             </p>
             <div className="grid grid-cols-2 gap-1.5 mb-3 max-h-48 overflow-y-auto p-0.5">
               {MOTION_PRESETS.map((m) => {
@@ -105,7 +105,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
           </>
         ) : (
           <div className="text-center py-4 text-slate-400 font-mono text-xs">
-            Pilih layer di kanvas untuk mengatur motion preset layer tersebut.
+            Select a layer on canvas to configure its motion preset.
           </div>
         )}
 
@@ -325,7 +325,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                 <button
                   onClick={onCreateGroup}
                   className="px-2 py-1 rounded-lg bg-orange-100 hover:bg-orange-200 text-[#ff6b35] font-bold text-[10px] transition"
-                  title="Buat wadah grup kosong baru"
+                  title="Create a new empty group container"
                 >
                   + Create Group
                 </button>
@@ -334,31 +334,31 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
               {selectedLayer.isGroup ? (
                 <div className="bg-orange-50 p-2.5 rounded-xl border border-orange-200 text-xs space-y-1">
                   <div className="font-bold text-orange-950 flex items-center gap-1.5">
-                    <span>📁 Wadah Grup Induk (Empty Container)</span>
+                    <span>📁 Group Container (Empty Parent)</span>
                   </div>
                   <p className="text-[10px] text-slate-600 leading-tight">
-                    Wadah ini tidak memiliki bentuk visual sendiri, namun memegang animasi gerak untuk menggerakkan semua children yang ada di dalamnya.
+                    This container holds no visual shapes itself, but drives motion keyframes for all child layers assigned inside it.
                   </p>
                   <div className="pt-1 text-[11px] font-semibold text-orange-800">
-                    Children: {layers.filter((l) => l.groupId === selectedLayer.id).length} layer
+                    Children: {layers.filter((l) => l.groupId === selectedLayer.id).length} layers
                   </div>
                 </div>
               ) : selectedLayer.groupId ? (
                 <div className="space-y-2 bg-orange-50/70 p-2.5 rounded-xl border border-orange-200">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-orange-950 truncate">
-                      Grup: {layers.find((g) => g.id === selectedLayer.groupId)?.name || selectedLayer.groupId}
+                      Group: {layers.find((g) => g.id === selectedLayer.groupId)?.name || selectedLayer.groupId}
                     </span>
                     <button
                       onClick={() => onSetLayerGroup(selectedLayer.id!, undefined)}
                       className="px-2 py-0.5 rounded text-[10px] bg-red-100 text-red-700 hover:bg-red-200 font-bold shrink-0 ml-1"
-                      title="Keluarkan layer ini dari grup"
+                      title="Remove this layer from group"
                     >
-                      Keluar Group
+                      Leave Group
                     </button>
                   </div>
                   <span className="text-[10px] text-slate-500 block leading-tight">
-                    ↳ Layer ini berada di dalam grup dan otomatis mengikuti gerakan dari wadah grup induknya.
+                    ↳ Layer is inside group and automatically inherits motion from its parent group container.
                   </span>
                 </div>
               ) : (
@@ -372,17 +372,17 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                     }}
                     value=""
                   >
-                    <option value="" disabled>Pilih Grup untuk Bergabung...</option>
+                    <option value="" disabled>Select Group to Join...</option>
                     {layers.filter((l) => l.isGroup).map((g) => (
                       <option key={g.id} value={g.id}>
-                        📁 Masuk ke: {g.name || g.id}
+                        📁 Join: {g.name || g.id}
                       </option>
                     ))}
                   </select>
                   <span className="text-[10px] text-slate-400 block leading-tight">
                     {layers.some((l) => l.isGroup)
-                      ? 'Pilih grup di atas atau klik "+ Create Group" untuk membuat wadah baru.'
-                      : 'Belum ada grup. Klik "+ Create Group" untuk membuat wadah grup kosong.'}
+                      ? 'Select group above or click "+ Create Group" to create a new container.'
+                      : 'No group available yet. Click "+ Create Group" to create one.'}
                   </span>
                 </div>
               )}
@@ -435,7 +435,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
         ) : (
           <div className="text-center py-8 text-slate-400 font-mono text-xs">
             <Sliders className="w-6 h-6 mx-auto mb-2 text-slate-300" />
-            Pilih layer di panel kiri atau kanvas untuk mengedit posisi & slab depth.
+            Click any component on canvas or track in timeline to edit its properties.
           </div>
         )}
       </div>

@@ -55,7 +55,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       }
     } catch (err) {
       console.error(err);
-      alert('Gagal mengekspor stiker animasi.');
+      alert('Failed to export animated sticker.');
     } finally {
       setIsExporting(false);
     }
@@ -88,12 +88,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         {/* Content */}
         <div className="p-5 space-y-4">
           <p className="text-slate-500 text-[11px] font-sans leading-relaxed">
-            Pilih format video animasi yang diinginkan. Hasil ekspor merender animasi loop stiker isometrik bersih tanpa elemen editor.
+            Choose your target video animation format. The render captures a clean, high-resolution seamless loop without editor UI elements.
           </p>
 
           {/* Format Selection */}
           <div>
-            <label className="text-slate-700 font-semibold mb-1.5 block">Format Animasi</label>
+            <label className="text-slate-700 font-semibold mb-1.5 block">Animation Format</label>
             <div className="grid grid-cols-3 gap-2">
               {(['gif', 'mp4', 'mov'] as ExportFormat[]).map((fmt) => (
                 <button
@@ -114,16 +114,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               ))}
             </div>
             <div className="text-[10px] text-slate-400 mt-1.5">
-              {format === 'gif' && 'GIF: Animasi loop ringan dengan transparansi web.'}
-              {format === 'mp4' && 'MP4: Kompatibilitas tinggi (H.264) untuk sosmed & web.'}
-              {format === 'mov' && 'MOV: QuickTime format untuk software editing video pro.'}
+              {format === 'gif' && 'GIF: Lightweight transparent loop for web & chat apps.'}
+              {format === 'mp4' && 'MP4: Universal compatibility (H.264) for social media.'}
+              {format === 'mov' && 'MOV: ProRes alpha channel video for video editing tools.'}
             </div>
           </div>
 
           {/* Resolution Selection */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-slate-800 font-semibold block">Resolusi Kualitas Tinggi</label>
+              <label className="text-slate-800 font-semibold block">Output Resolution</label>
               <span className="text-[10px] text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded">
                 Crisp 60 FPS Engine
               </span>
@@ -158,7 +158,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <div className="flex justify-between text-[11px] text-slate-600">
                 <span className="flex items-center gap-1.5">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-[#ff6b35]" />
-                  {progress?.stage === 'rendering' ? 'Merender Frame...' : 'Mengompres Animasi...'}
+                  {progress?.stage === 'rendering' ? 'Rendering Frames...' : 'Encoding Animation...'}
                 </span>
                 <span>{progress?.progress || 0}%</span>
               </div>
@@ -175,7 +175,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-2 text-emerald-800 text-[11px] font-semibold">
                 <CheckCircle className="w-4 h-4 text-emerald-600" />
-                <span>Animasi Siap Diunduh!</span>
+                <span>Animation Ready!</span>
               </div>
               <a
                 href={downloadUrl}
@@ -194,7 +194,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
             >
-              Tutup
+              Close
             </button>
             <button
               type="button"
@@ -203,7 +203,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               className="px-5 py-2 rounded-xl bg-[#ff6b35] hover:bg-[#e85926] text-white font-semibold flex items-center gap-1.5 shadow-sm shadow-orange-200 disabled:opacity-50"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{isExporting ? 'Memproses...' : `Render .${format.toUpperCase()}`}</span>
+              <span>{isExporting ? 'Processing...' : `Render .${format.toUpperCase()}`}</span>
             </button>
           </div>
         </div>

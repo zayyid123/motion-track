@@ -492,7 +492,7 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
                           <div className="text-[9px] text-slate-400 font-normal truncate flex items-center gap-1">
                             <span>{layer.motionPreset ? `motion: ${layer.motionPreset}` : 'static'}</span>
                             {isGroupContainer ? (
-                              <span className="text-orange-600 font-semibold truncate">• (Wadah Kosong)</span>
+                              <span className="text-orange-600 font-semibold truncate">• (Empty Container)</span>
                             ) : inGroup ? (
                               <span className="text-blue-500 font-medium truncate">• ↳ {layer.groupId}</span>
                             ) : null}
@@ -525,7 +525,7 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
                         <button
                           onClick={() => onDeleteLayer(layerId)}
                           className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
-                          title={layer.isGroup ? 'Hapus wadah grup ini' : 'Hapus layer ini'}
+                          title={layer.isGroup ? 'Delete this group container' : 'Delete this layer'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

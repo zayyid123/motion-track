@@ -54,7 +54,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <p className="text-slate-700 text-xs font-sans leading-relaxed font-medium">
-            Hubungkan AI kustom dengan memasukkan <strong>Base URL</strong> dan <strong>API Key</strong> (kompatibel dengan format OpenAI). Kunci hanya tersimpan di browser Anda (<code>localStorage</code>).
+            Connect your custom AI by entering your <strong>Base URL</strong> and <strong>API Key</strong> (compatible with OpenAI format). Keys are saved securely in your browser (<code>localStorage</code>).
           </p>
 
           <div>
@@ -71,7 +71,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold placeholder:text-slate-500"
             />
             <span className="text-[11px] text-slate-600 font-medium block mt-1">
-              Contoh: https://api.openai.com/v1 atau proxy AI Anda.
+              Example: https://api.openai.com/v1 or your local AI proxy.
             </span>
           </div>
 
@@ -88,7 +88,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold placeholder:text-slate-500"
             />
             <span className="text-[11px] text-slate-600 font-medium block mt-1">
-              Disimpan aman secara lokal di browser perangkat Anda.
+              Stored securely on your local device.
             </span>
           </div>
 
@@ -114,7 +114,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
             >
-              Batal
+              Cancel
             </button>
             <button
               type="submit"
@@ -122,10 +122,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             >
               {savedNotice ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" /> Tersimpan!
+                  <Check className="w-3.5 h-3.5 text-emerald-400" /> Saved!
                 </>
               ) : (
-                'Simpan Pengaturan'
+                'Save Settings'
               )}
             </button>
           </div>
