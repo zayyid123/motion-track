@@ -14,6 +14,7 @@ import {
   ChevronUp,
   GripVertical,
   CornerDownRight,
+  Trash2,
 } from 'lucide-react';
 import { Layer } from '@/lib/funIsometric';
 
@@ -30,6 +31,7 @@ interface MultiTrackTimelineProps {
   onToggleLoop: () => void;
   onToggleHideLayer: (id: string) => void;
   onToggleLockLayer: (id: string) => void;
+  onDeleteLayer: (id: string) => void;
   onUpdateLayerTiming: (id: string, ip: number, op: number) => void;
   onMoveLayerIndex: (fromIndex: number, toIndex: number, targetGroupId?: string | null) => void;
 }
@@ -47,6 +49,7 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
   onToggleLoop,
   onToggleHideLayer,
   onToggleLockLayer,
+  onDeleteLayer,
   onUpdateLayerTiming,
   onMoveLayerIndex,
 }) => {
@@ -497,7 +500,7 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
                         </div>
                       </div>
 
-                      {/* Quick Layer Controls: Eye (Hide) & Lock */}
+                      {/* Quick Layer Controls: Eye (Hide), Lock & Delete */}
                       <div className="flex items-center gap-1 shrink-0 ml-1" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => onToggleHideLayer(layerId)}
@@ -517,6 +520,14 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
                           title={isLocked ? 'Unlock layer' : 'Lock layer'}
                         >
                           {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                        </button>
+
+                        <button
+                          onClick={() => onDeleteLayer(layerId)}
+                          className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                          title={layer.isGroup ? 'Hapus wadah grup ini' : 'Hapus layer ini'}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>

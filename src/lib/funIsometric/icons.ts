@@ -186,4 +186,27 @@ export const plane: Icon = {
   ],
 }
 
-export const ICONS: ReadonlyArray<Icon> = [padlock, chat, search, coins, plane]
+export const blankProject: Icon = {
+  name: 'Blank Sticker',
+  frames: 180,
+  line: LINE,
+  extrude: EXT,
+  layers: [
+    {
+      id: 'base-rect',
+      name: 'Initial Slab',
+      p: [250, 250],
+      tilt: FACE,
+      motionPreset: 'wiggle',
+      shapes: [
+        {
+          d: rect(-60, -60, 120, 120, 16),
+          fill: 'main',
+          depth: 1,
+        },
+      ],
+    },
+  ],
+}
+
+export const ICONS: ReadonlyArray<Icon> = [padlock, chat, search, coins, plane, blankProject]

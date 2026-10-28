@@ -6,7 +6,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { Icon, VIEWS, View } from '@/lib/funIsometric';
-import { padlock, chat, search, coins, plane } from '@/lib/funIsometric/icons';
+import { padlock, chat, search, coins, plane, blankProject } from '@/lib/funIsometric/icons';
 
 interface LeftSidebarProps {
   icon: Icon;
@@ -17,6 +17,7 @@ interface LeftSidebarProps {
 }
 
 const TEMPLATES = [
+  { name: '+ Blank Page', icon: blankProject, desc: 'clean canvas' },
   { name: 'Padlock', icon: padlock, desc: 'clasp, shackle' },
   { name: 'Chat Bot', icon: chat, desc: 'wobble, look' },
   { name: 'Search Lens', icon: search, desc: 'twist, sparkle' },

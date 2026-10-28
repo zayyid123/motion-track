@@ -372,10 +372,13 @@ export function MotionTrackStudio() {
       }
     }
 
+    const viewConfig = VIEWS[currentFacing];
+
     const newLayer: Layer = {
       id: newId,
       name: `New ${type}`,
       p: [250, 250],
+      tilt: viewConfig.tilt, // Set initial isometric tilt from current facing direction!
       groupId: autoGroup,
       isGroupLeader: false,
       shapes: [
@@ -430,7 +433,17 @@ export function MotionTrackStudio() {
     updateIconWithHistory((prev) => ({
       ...prev,
       extrude: viewConfig.extrude,
-      layers: prev.layers.map((l) => (l.tilt ? { ...l, tilt: viewConfig.tilt } : l)),
+      // Update all visual slab layers (both shapes and group parents) to the new isometric tilt
+      layers: prev.layers.map((l) => {
+        // Flat face shapes and newly created shapes always follow the selected facing tilt
+        if (l.shapes && l.shapes.length > 0) {
+          return { ...l, tilt: viewConfig.tilt };
+        }
+        if (l.tilt) {
+          return { ...l, tilt: viewConfig.tilt };
+        }
+        return l;
+      }),
     }));
   };
 
@@ -593,6 +606,7 @@ export function MotionTrackStudio() {
         onToggleLoop={() => {}}
         onToggleHideLayer={handleToggleHideLayer}
         onToggleLockLayer={handleToggleLockLayer}
+        onDeleteLayer={handleDeleteLayer}
         onUpdateLayerTiming={handleUpdateLayerTiming}
         onMoveLayerIndex={handleMoveLayerIndex}
       />

@@ -185,43 +185,46 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
         {selectedLayer && selectedLayer.id ? (
           <div className="space-y-3 font-mono text-xs">
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Layer Name / ID</label>
+              <label className="text-[11px] text-slate-700 font-bold block mb-1">Layer Name / ID</label>
               <input
                 type="text"
                 value={selectedLayer.name || selectedLayer.id}
+                placeholder="Contoh: Padlock Body"
                 onChange={(e) =>
                   onUpdateLayer(selectedLayer.id!, { name: e.target.value })
                 }
-                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-slate-50"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-white text-slate-950 font-bold placeholder:text-slate-500 shadow-xs"
               />
             </div>
 
             {/* Position X / Y */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Position X</label>
+                <label className="text-[11px] text-slate-700 font-bold block mb-1">Position X</label>
                 <input
                   type="number"
                   value={currentPos[0]}
+                  placeholder="250"
                   onChange={(e) =>
                     onUpdateLayer(selectedLayer.id!, {
                       p: [parseInt(e.target.value) || 0, currentPos[1]],
                     })
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-slate-50"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-white text-slate-950 font-bold placeholder:text-slate-500 shadow-xs"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Position Y</label>
+                <label className="text-[11px] text-slate-700 font-bold block mb-1">Position Y</label>
                 <input
                   type="number"
                   value={currentPos[1]}
+                  placeholder="250"
                   onChange={(e) =>
                     onUpdateLayer(selectedLayer.id!, {
                       p: [currentPos[0], parseInt(e.target.value) || 0],
                     })
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-slate-50"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-white text-slate-950 font-bold placeholder:text-slate-500 shadow-xs"
                 />
               </div>
             </div>
@@ -411,13 +414,13 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
 
             {/* Fill Role Mapping */}
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Color Role Slot</label>
+              <label className="text-[11px] text-slate-700 font-bold block mb-1">Color Role Slot</label>
               <select
                 value={selectedLayer.shapes[0]?.fill || 'main'}
                 onChange={(e) =>
                   onUpdateLayerShapeFill(selectedLayer.id!, e.target.value as Swatch)
                 }
-                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-800 capitalize"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-white text-slate-950 font-bold capitalize shadow-xs"
               >
                 {['main', 'gold', 'tint', 'ok', 'hot', 'deep', 'white', 'grey', 'paper', 'ink'].map(
                   (role) => (
