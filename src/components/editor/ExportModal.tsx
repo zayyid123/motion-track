@@ -84,13 +84,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         {/* Content */}
         <div className="p-5 space-y-4">
-          <p className="text-slate-500 text-[11px] font-sans leading-relaxed">
+          <p className="text-slate-700 text-xs font-sans leading-relaxed font-medium">
             Pilih format video animasi yang diinginkan. Hasil ekspor merender animasi loop stiker isometrik bersih tanpa elemen editor.
           </p>
 
           {/* Format Selection */}
           <div>
-            <label className="text-slate-700 font-semibold mb-1.5 block">Format Animasi</label>
+            <label className="text-slate-900 font-bold mb-1.5 block">Format Animasi</label>
             <div className="grid grid-cols-3 gap-2">
               {(['gif', 'mp4', 'mov'] as ExportFormat[]).map((fmt) => (
                 <button
@@ -103,14 +103,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   className={`py-2 px-3 rounded-xl border text-center font-bold uppercase transition ${
                     format === fmt
                       ? 'bg-orange-50 border-[#ff6b35] text-orange-700 shadow-sm'
-                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                      : 'bg-slate-50 border-slate-300 text-slate-800 hover:bg-slate-100'
                   }`}
                 >
                   .{fmt}
                 </button>
               ))}
             </div>
-            <div className="text-[10px] text-slate-400 mt-1.5">
+            <div className="text-[11px] text-slate-600 font-medium mt-1.5">
               {format === 'gif' && 'GIF: Animasi loop ringan dengan transparansi web.'}
               {format === 'mp4' && 'MP4: Kompatibilitas tinggi (H.264) untuk sosmed & web.'}
               {format === 'mov' && 'MOV: QuickTime video format untuk aplikasi editor pro.'}
@@ -119,7 +119,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
           {/* Resolution Selection */}
           <div>
-            <label className="text-slate-700 font-semibold mb-1.5 block">Resolusi Output</label>
+            <label className="text-slate-900 font-bold mb-1.5 block">Resolusi Output</label>
             <div className="grid grid-cols-3 gap-2">
               {[300, 400, 500].map((res) => (
                 <button
@@ -129,7 +129,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   className={`py-2 px-3 rounded-xl border text-center transition ${
                     resolution === res
                       ? 'bg-slate-900 border-slate-900 text-white font-bold'
-                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                      : 'bg-slate-50 border-slate-300 text-slate-800 font-semibold hover:bg-slate-100'
                   }`}
                 >
                   {res}x{res} px

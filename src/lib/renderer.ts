@@ -27,6 +27,17 @@ export function resolveColor(
 }
 
 /**
+ * Direction vectors for isometric extrusions
+ */
+export function getExtrudeVector(facing: string): { x: number; y: number } {
+  if (facing === 'right') return { x: 0.8, y: 0.6 };
+  if (facing === 'left') return { x: -0.8, y: 0.6 };
+  if (facing === 'front') return { x: 0, y: 1.0 };
+  if (facing === 'flat') return { x: 0.4, y: 0.3 };
+  return { x: 0, y: 1 };
+}
+
+/**
  * Draw isometric sticker scene on HTML5 2D Canvas
  */
 export function renderSticker(
@@ -75,11 +86,7 @@ export function renderSticker(
   ctx.translate(-250, -250);
 
   // Facing extrude direction vectors
-  let extrudeVector = { x: 0, y: 1 };
-  if (project.facing === 'right') extrudeVector = { x: 0.8, y: 0.6 };
-  else if (project.facing === 'left') extrudeVector = { x: -0.8, y: 0.6 };
-  else if (project.facing === 'front') extrudeVector = { x: 0, y: 1.0 };
-  else if (project.facing === 'flat') extrudeVector = { x: 0.4, y: 0.3 };
+  const extrudeVector = getExtrudeVector(project.facing);
 
   // Draw each layer back to front
   for (const layer of project.layers) {
@@ -213,11 +220,27 @@ function drawSelectionBox(ctx: CanvasRenderingContext2D, layer: StickerLayer) {
   ctx.strokeRect(-hw, -hh, hw * 2, hh * 2);
   ctx.setLineDash([]);
 
-  // Handles
-  ctx.fillStyle = '#ffffff';
+  // Rotation stem line & handle
   ctx.strokeStyle = '#2563eb';
   ctx.lineWidth = 2;
-  const handleSize = 6;
+  ctx.beginPath();
+  ctx.moveTo(0, -hh);
+  ctx.lineTo(0, -hh - 22);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(0, -hh - 22, 5.5, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.strokeStyle = '#1d4ed8';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Corner Resize Handles
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#1d4ed8';
+  ctx.lineWidth = 2.5;
+  const handleSize = 8;
   [
     [-hw, -hh],
     [hw, -hh],
@@ -235,7 +258,7 @@ function drawCheckerboard(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const size = 16;
   for (let y = 0; y < h; y += size) {
     for (let x = 0; x < w; x += size) {
-      ctx.fillStyle = ((x / size) + (y / size)) % 2 === 0 ? '#f8fafc' : '#ffffff';
+      ctx.fillStyle = ((x / size) + (y / size)) % 2 === 0 ? '#e2e8f0' : '#ffffff';
       ctx.fillRect(x, y, size, size);
     }
   }

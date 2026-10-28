@@ -53,12 +53,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <p className="text-slate-500 text-[11px] font-sans leading-relaxed">
+          <p className="text-slate-700 text-xs font-sans leading-relaxed font-medium">
             Hubungkan AI kustom dengan memasukkan <strong>Base URL</strong> dan <strong>API Key</strong> (kompatibel dengan format OpenAI). Kunci hanya tersimpan di browser Anda (<code>localStorage</code>).
           </p>
 
           <div>
-            <label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1">
+            <label className="flex items-center gap-1.5 text-slate-900 font-bold mb-1">
               <Globe className="w-3.5 h-3.5 text-blue-600" />
               <span>AI Base URL</span>
             </label>
@@ -68,15 +68,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               value={form.baseUrl}
               onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
               placeholder="https://api.openai.com/v1"
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-blue-500 focus:outline-none bg-slate-50"
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold placeholder:text-slate-500"
             />
-            <span className="text-[10px] text-slate-400 block mt-1">
+            <span className="text-[11px] text-slate-600 font-medium block mt-1">
               Contoh: https://api.openai.com/v1 atau proxy AI Anda.
             </span>
           </div>
 
           <div>
-            <label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1">
+            <label className="flex items-center gap-1.5 text-slate-900 font-bold mb-1">
               <Key className="w-3.5 h-3.5 text-blue-600" />
               <span>API Key</span>
             </label>
@@ -85,15 +85,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               value={form.apiKey}
               onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
               placeholder="sk-proj-..."
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-blue-500 focus:outline-none bg-slate-50"
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold placeholder:text-slate-500"
             />
-            <span className="text-[10px] text-slate-400 block mt-1">
+            <span className="text-[11px] text-slate-600 font-medium block mt-1">
               Disimpan aman secara lokal di browser perangkat Anda.
             </span>
           </div>
 
           <div>
-            <label className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1">
+            <label className="flex items-center gap-1.5 text-slate-900 font-bold mb-1">
               <Cpu className="w-3.5 h-3.5 text-blue-600" />
               <span>Model Name</span>
             </label>
@@ -103,7 +103,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               value={form.model}
               onChange={(e) => setForm({ ...form, model: e.target.value })}
               placeholder="gpt-4o-mini"
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-blue-500 focus:outline-none bg-slate-50"
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold placeholder:text-slate-500"
             />
           </div>
 

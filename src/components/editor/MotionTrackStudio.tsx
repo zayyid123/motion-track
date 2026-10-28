@@ -241,6 +241,8 @@ export function MotionTrackStudio() {
             isPlaying={isPlaying}
             selectedLayerId={selectedLayerId}
             onSelectLayer={setSelectedLayerId}
+            onUpdateLayer={handleUpdateLayer}
+            onDeleteLayer={handleDeleteLayer}
             zoom={zoom}
           />
         </main>

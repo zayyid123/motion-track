@@ -97,8 +97,8 @@ export const AISidebar: React.FC<AISidebarProps> = ({
             <Sparkles className="w-3.5 h-3.5" />
           </div>
           <div>
-            <h4 className="font-mono text-xs font-bold text-slate-800">AI Assistant</h4>
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
+            <h4 className="font-mono text-xs font-bold text-slate-900">AI Assistant</h4>
+            <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-600 font-medium">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
                   settings.apiKey ? 'bg-emerald-500' : 'bg-amber-400'
@@ -111,7 +111,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
 
         <button
           onClick={onClose}
-          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+          className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
         >
           <X className="w-4 h-4" />
         </button>
@@ -119,8 +119,8 @@ export const AISidebar: React.FC<AISidebarProps> = ({
 
       {/* Warning if no API Key */}
       {!settings.apiKey && (
-        <div className="p-3 bg-amber-50/70 border-b border-amber-200 flex items-start gap-2 text-xs font-mono text-amber-900">
-          <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+        <div className="p-3 bg-amber-50 border-b border-amber-200 flex items-start gap-2 text-xs font-mono text-amber-950 font-medium">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div className="flex-1">
             <span>API Key belum diisi. Masukkan URL & API Key AI di bagian settings.</span>
             <button
@@ -141,16 +141,16 @@ export const AISidebar: React.FC<AISidebarProps> = ({
             className={`flex gap-2.5 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {m.sender !== 'user' && (
-              <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
                 <Bot className="w-3.5 h-3.5" />
               </div>
             )}
 
             <div
-              className={`p-3 rounded-2xl max-w-[85%] font-sans leading-relaxed whitespace-pre-wrap ${
+              className={`p-3 rounded-2xl max-w-[85%] font-sans leading-relaxed whitespace-pre-wrap font-normal ${
                 m.sender === 'user'
-                  ? 'bg-slate-900 text-white rounded-tr-none'
-                  : 'bg-slate-50 border border-slate-200/80 text-slate-800 rounded-tl-none'
+                  ? 'bg-slate-900 text-white rounded-tr-none font-medium'
+                  : 'bg-slate-50 border border-slate-300 text-slate-900 rounded-tl-none'
               }`}
             >
               {m.text}
@@ -166,10 +166,10 @@ export const AISidebar: React.FC<AISidebarProps> = ({
 
         {isLoading && (
           <div className="flex gap-2.5">
-            <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+            <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
               <Bot className="w-3.5 h-3.5" />
             </div>
-            <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl rounded-tl-none font-mono text-[11px] text-slate-500 flex items-center gap-1.5">
+            <div className="p-3 bg-slate-50 border border-slate-300 rounded-2xl rounded-tl-none font-mono text-[11px] text-slate-700 font-medium flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#ff6b35] animate-pulse" />
               <span>Memproses ide stiker...</span>
             </div>
@@ -177,21 +177,21 @@ export const AISidebar: React.FC<AISidebarProps> = ({
         )}
 
         {errorMessage && (
-          <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl font-mono text-[11px] text-red-600">
+          <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl font-mono text-[11px] text-red-700 font-medium">
             {errorMessage}
           </div>
         )}
       </div>
 
       {/* Quick Actions */}
-      <div className="px-3 py-2 border-t border-slate-200/70 bg-slate-50/50 flex flex-col gap-1">
-        <span className="text-[10px] font-mono text-slate-400 font-semibold">Quick Prompts:</span>
+      <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 flex flex-col gap-1">
+        <span className="text-[10px] font-mono text-slate-700 font-bold">Quick Prompts:</span>
         <div className="flex flex-wrap gap-1">
           {QUICK_ACTIONS.map((action, i) => (
             <button
               key={i}
               onClick={() => handleSend(action)}
-              className="text-[10px] font-mono text-slate-600 bg-white border border-slate-200 hover:border-orange-300 hover:bg-orange-50 px-2 py-1 rounded-lg transition truncate max-w-full"
+              className="text-[10px] font-mono text-slate-800 font-semibold bg-white border border-slate-300 hover:border-[#ff6b35] hover:bg-orange-50 px-2.5 py-1 rounded-lg transition truncate max-w-full shadow-2xs"
             >
               {action}
             </button>
@@ -200,7 +200,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
       </div>
 
       {/* Input Area */}
-      <div className="p-3 border-t border-slate-200/80 bg-white">
+      <div className="p-3 border-t border-slate-200 bg-white">
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -208,7 +208,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Tanyakan konsep stiker, palet warna..."
-            className="flex-1 px-3 py-2 rounded-xl border border-slate-200 focus:border-blue-500 focus:outline-none text-xs bg-slate-50 text-slate-800"
+            className="flex-1 px-3 py-2 rounded-xl border border-slate-300 focus:border-[#ff6b35] focus:outline-none text-xs bg-slate-50 text-slate-900 font-medium placeholder:text-slate-500"
           />
           <button
             onClick={() => handleSend()}

@@ -23,12 +23,12 @@ export const Timeline: React.FC<TimelineProps> = ({
   onToggleLoop,
 }) => {
   return (
-    <footer className="h-16 border-t border-slate-200/80 bg-white/95 backdrop-blur-md px-6 flex items-center gap-6 z-10 select-none">
+    <footer className="h-16 border-t border-slate-200 bg-white/95 backdrop-blur-md px-6 flex items-center gap-6 z-10 select-none">
       {/* Controls */}
       <div className="flex items-center gap-2">
         <button
           onClick={() => onSeek(0)}
-          className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition"
+          className="p-2 text-slate-700 hover:text-slate-950 hover:bg-slate-100 rounded-xl transition"
           title="Jump to frame 0"
         >
           <SkipBack className="w-4 h-4" />
@@ -39,7 +39,7 @@ export const Timeline: React.FC<TimelineProps> = ({
           className={`p-2 rounded-xl transition ${
             isPlaying
               ? 'bg-[#ff6b35] text-white shadow-sm shadow-orange-200'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
           }`}
           title={isPlaying ? 'Pause' : 'Play'}
         >
@@ -50,8 +50,8 @@ export const Timeline: React.FC<TimelineProps> = ({
           onClick={onToggleLoop}
           className={`p-2 rounded-xl transition ${
             loop
-              ? 'text-blue-600 bg-blue-50'
-              : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+              ? 'text-blue-700 bg-blue-100/80 font-bold'
+              : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
           }`}
           title="Toggle Seamless Loop"
         >
@@ -60,9 +60,9 @@ export const Timeline: React.FC<TimelineProps> = ({
       </div>
 
       {/* Frame Counter Display */}
-      <div className="font-mono text-xs text-slate-600 bg-slate-50 border border-slate-200/80 px-3 py-1.5 rounded-xl">
-        <span className="font-bold text-slate-900">{currentFrame}</span>
-        <span className="text-slate-400"> / {totalFrames} f</span>
+      <div className="font-mono text-xs text-slate-700 bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-xl font-medium">
+        <span className="font-bold text-slate-950">{currentFrame}</span>
+        <span className="text-slate-600 font-semibold"> / {totalFrames} f</span>
       </div>
 
       {/* Scrubber Slider */}
@@ -73,12 +73,12 @@ export const Timeline: React.FC<TimelineProps> = ({
           max={totalFrames - 1}
           value={currentFrame}
           onChange={(e) => onSeek(parseInt(e.target.value) || 0)}
-          className="w-full accent-[#ff6b35] h-2 bg-slate-100 rounded-lg cursor-pointer"
+          className="w-full accent-[#ff6b35] h-2.5 bg-slate-200 rounded-lg cursor-pointer"
         />
       </div>
 
       {/* 60 FPS Badge */}
-      <div className="font-mono text-[11px] font-semibold text-slate-400">
+      <div className="font-mono text-[11px] font-bold text-slate-700">
         60 FPS • 2.0s LOOP
       </div>
     </footer>

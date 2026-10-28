@@ -103,22 +103,22 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
 
             {/* Developer-Focused CLI Command Box */}
             <div className="pt-2">
-              <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-2.5 sm:p-3 font-mono text-xs max-w-xl shadow-sm">
-                <div className="flex items-center gap-2.5 text-slate-700 overflow-x-auto py-1">
+              <div className="flex items-center justify-between bg-white border border-slate-300 rounded-2xl p-2.5 sm:p-3 font-mono text-xs max-w-xl shadow-xs">
+                <div className="flex items-center gap-2.5 text-slate-800 overflow-x-auto py-1">
                   <Terminal className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span className="text-slate-400 select-none">$</span>
-                  <span className="font-medium text-slate-800">{command}</span>
+                  <span className="text-slate-600 font-bold select-none">$</span>
+                  <span className="font-semibold text-slate-900">{command}</span>
                 </div>
                 <button
                   onClick={handleCopy}
-                  className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition border border-transparent hover:border-slate-200 shrink-0 ml-2"
+                  className="p-2 text-slate-600 hover:text-slate-950 hover:bg-slate-50 rounded-xl transition border border-transparent hover:border-slate-300 shrink-0 ml-2"
                   title="Salin perintah instalasi skill"
                 >
-                  {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  {copied ? <Check className="w-4 h-4 text-emerald-600 font-bold" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
-              <span className="text-[11px] font-mono text-slate-400 block mt-2 ml-1">
-                Diadaptasi dari ekosistem agen skill <a href="https://github.com/kelvinkn17/skills" target="_blank" rel="noreferrer" className="underline hover:text-[#ff6b35]">kelvinkn17/skills</a> (MIT License).
+              <span className="text-[11px] font-mono text-slate-600 font-medium block mt-2 ml-1">
+                Diadaptasi dari ekosistem agen skill <a href="https://github.com/kelvinkn17/skills" target="_blank" rel="noreferrer" className="underline hover:text-[#ff6b35] font-semibold">kelvinkn17/skills</a> (MIT License).
               </span>
             </div>
 
@@ -159,44 +159,44 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
       </section>
 
       {/* Feature Highlights Grid */}
-      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-slate-200/70">
+      <section className="max-w-6xl mx-auto px-6 py-16 border-t border-slate-300">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-300 shadow-xs space-y-2">
             <div className="w-8 h-8 rounded-xl bg-orange-100 text-[#ff6b35] flex items-center justify-center mb-4">
               <Layers className="w-4 h-4" />
             </div>
-            <h3 className="font-mono font-bold text-sm text-slate-800">Isometric Slab System</h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">
+            <h3 className="font-mono font-bold text-sm text-slate-900">Isometric Slab System</h3>
+            <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium">
               Ekstrusi 3D solid dengan garis tebal 5px, bayangan terarah, dan 4 sudut pandang: right, left, front, serta flat.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-300 shadow-xs space-y-2">
             <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
               <Palette className="w-4 h-4" />
             </div>
-            <h3 className="font-mono font-bold text-sm text-slate-800">Warm Orange & Blue</h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">
+            <h3 className="font-mono font-bold text-sm text-slate-900">Warm Orange & Blue</h3>
+            <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium">
               Palet ikonik Slush: Tangerine orange cerah dipadukan dengan aksen electric cobalt blue dan soft sky tints.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-300 shadow-xs space-y-2">
             <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4">
               <Film className="w-4 h-4" />
             </div>
-            <h3 className="font-mono font-bold text-sm text-slate-800">MOV / MP4 / GIF Export</h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">
+            <h3 className="font-mono font-bold text-sm text-slate-900">MOV / MP4 / GIF Export</h3>
+            <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium">
               Rendering animasi stiker bergerak resolusi tinggi bersih tanpa elemen editor yang siap digunakan di produk web & video.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="p-6 rounded-2xl bg-white border border-slate-300 shadow-xs space-y-2">
             <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4">
               <Bot className="w-4 h-4" />
             </div>
-            <h3 className="font-mono font-bold text-sm text-slate-800">Custom AI Chat</h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-sans">
+            <h3 className="font-mono font-bold text-sm text-slate-900">Custom AI Chat</h3>
+            <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium">
               Sidebar asisten AI dengan endpoint URL & API Key Anda sendiri untuk brainstorming ide stiker dan kombinasi gerak.
             </p>
           </div>
@@ -204,12 +204,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
       </section>
 
       {/* Footer */}
-      <footer className="max-w-6xl mx-auto px-6 py-8 border-t border-slate-200/60 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-slate-400 gap-4">
+      <footer className="max-w-6xl mx-auto px-6 py-8 border-t border-slate-300 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-slate-600 font-medium gap-4">
         <div>
           © 2026 motion-track. Minimalist Swiss-inspired Isometric Engine.
         </div>
         <div>
-          Inspired by <a href="https://github.com/kelvinkn17/skills" target="_blank" rel="noreferrer" className="underline hover:text-[#ff6b35]">fun-isometric</a> (MIT).
+          Inspired by <a href="https://github.com/kelvinkn17/skills" target="_blank" rel="noreferrer" className="underline hover:text-[#ff6b35] font-semibold">fun-isometric</a> (MIT).
         </div>
       </footer>
     </div>

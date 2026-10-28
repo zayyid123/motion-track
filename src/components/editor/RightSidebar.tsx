@@ -63,7 +63,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
 
         {/* Preset Selector */}
         <div className="space-y-1.5 mb-3">
-          <label className="text-[11px] font-mono text-slate-400 block font-semibold uppercase">
+          <label className="text-[11px] font-mono text-slate-700 block font-bold uppercase">
             Motion Preset
           </label>
           <div className="grid grid-cols-2 gap-1.5">
@@ -78,12 +78,12 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                 }
                 className={`px-2.5 py-1.5 rounded-xl text-left border text-xs font-mono transition ${
                   project.motion.preset === m.id
-                    ? 'bg-orange-50 border-[#ff6b35] text-slate-900 font-semibold shadow-sm'
-                    : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100'
+                    ? 'bg-orange-50 border-[#ff6b35] text-slate-900 font-bold shadow-sm'
+                    : 'bg-slate-50 border-slate-300 text-slate-800 hover:bg-slate-100 font-medium'
                 }`}
               >
                 <div>{m.name}</div>
-                <div className="text-[9px] text-slate-400 truncate">{m.desc}</div>
+                <div className="text-[9px] text-slate-600 truncate font-medium">{m.desc}</div>
               </button>
             ))}
           </div>
@@ -92,9 +92,9 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
         {/* Speed & Intensity Sliders */}
         <div className="space-y-2.5 pt-1">
           <div>
-            <div className="flex justify-between text-[11px] font-mono text-slate-500 mb-1">
-              <span>SPEED PACE</span>
-              <span className="font-semibold text-slate-800">{project.motion.speed}x</span>
+            <div className="flex justify-between text-[11px] font-mono text-slate-700 mb-1">
+              <span className="font-bold">SPEED PACE</span>
+              <span className="font-bold text-slate-900">{project.motion.speed}x</span>
             </div>
             <input
               type="range"
@@ -108,14 +108,14 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                   speed: parseFloat(e.target.value),
                 })
               }
-              className="w-full accent-[#ff6b35] h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+              className="w-full accent-[#ff6b35] h-2 bg-slate-200 rounded-lg cursor-pointer"
             />
           </div>
 
           <div>
-            <div className="flex justify-between text-[11px] font-mono text-slate-500 mb-1">
-              <span>MOTION INTENSITY</span>
-              <span className="font-semibold text-slate-800">
+            <div className="flex justify-between text-[11px] font-mono text-slate-700 mb-1">
+              <span className="font-bold">MOTION INTENSITY</span>
+              <span className="font-bold text-slate-900">
                 {Math.round(project.motion.intensity * 100)}%
               </span>
             </div>
@@ -131,7 +131,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                   intensity: parseFloat(e.target.value),
                 })
               }
-              className="w-full accent-[#ff6b35] h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+              className="w-full accent-[#ff6b35] h-2 bg-slate-200 rounded-lg cursor-pointer"
             />
           </div>
         </div>
@@ -184,7 +184,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                     className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
                   />
                 </label>
-                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-tight">
+                <span className="text-[10px] font-mono text-slate-700 font-bold uppercase tracking-tight">
                   {role}
                 </span>
               </div>
@@ -205,39 +205,40 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
         {selectedLayer ? (
           <div className="space-y-3 font-mono text-xs">
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Layer Name</label>
+              <label className="text-[11px] text-slate-700 font-bold block mb-1">Layer Name</label>
               <input
                 type="text"
                 value={selectedLayer.name}
+                placeholder="Nama Layer..."
                 onChange={(e) =>
                   onUpdateLayer(selectedLayer.id, { name: e.target.value })
                 }
-                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-slate-50"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold placeholder:text-slate-500"
               />
             </div>
 
             {/* Position X / Y */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Pos X</label>
+                <label className="text-[11px] text-slate-700 font-bold block mb-1">Pos X</label>
                 <input
                   type="number"
                   value={selectedLayer.x}
                   onChange={(e) =>
                     onUpdateLayer(selectedLayer.id, { x: parseInt(e.target.value) || 0 })
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-pink-400 focus:outline-none bg-slate-50"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Pos Y</label>
+                <label className="text-[11px] text-slate-700 font-bold block mb-1">Pos Y</label>
                 <input
                   type="number"
                   value={selectedLayer.y}
                   onChange={(e) =>
                     onUpdateLayer(selectedLayer.id, { y: parseInt(e.target.value) || 0 })
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-pink-400 focus:outline-none bg-slate-50"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
                 />
               </div>
             </div>
@@ -245,7 +246,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
             {/* Width / Height */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Width</label>
+                <label className="text-[11px] text-slate-700 font-bold block mb-1">Width</label>
                 <input
                   type="number"
                   value={selectedLayer.width}
@@ -254,11 +255,11 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                       width: Math.max(10, parseInt(e.target.value) || 10),
                     })
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-pink-400 focus:outline-none bg-slate-50"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Height</label>
+                <label className="text-[11px] text-slate-700 font-bold block mb-1">Height</label>
                 <input
                   type="number"
                   value={selectedLayer.height}
@@ -267,7 +268,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                       height: Math.max(10, parseInt(e.target.value) || 10),
                     })
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-pink-400 focus:outline-none bg-slate-50"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
                 />
               </div>
             </div>
@@ -275,7 +276,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
             {/* Slab Depth & Rotation */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Slab Depth</label>
+                <label className="text-[11px] text-slate-700 font-bold block mb-1">Slab Depth</label>
                 <input
                   type="number"
                   min="0"
@@ -286,11 +287,11 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                       depth: Math.max(0, parseInt(e.target.value) || 0),
                     })
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-pink-400 focus:outline-none bg-slate-50"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Rotation (°)</label>
+                <label className="text-[11px] text-slate-700 font-bold block mb-1">Rotation (°)</label>
                 <input
                   type="number"
                   value={selectedLayer.rotation}
@@ -299,14 +300,14 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                       rotation: parseInt(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-pink-400 focus:outline-none bg-slate-50"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
                 />
               </div>
             </div>
 
             {/* Fill Role Mapping */}
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Color Role</label>
+              <label className="text-[11px] text-slate-700 font-bold block mb-1">Color Role</label>
               <select
                 value={selectedLayer.fillRole}
                 onChange={(e) =>
@@ -314,7 +315,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                     fillRole: e.target.value as RoleColorKey,
                   })
                 }
-                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-pink-400 focus:outline-none bg-slate-50 text-slate-800"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 focus:border-[#ff6b35] focus:outline-none bg-slate-50 text-slate-900 font-semibold"
               >
                 {COLOR_ROLES.map((r) => (
                   <option key={r.role} value={r.role}>
@@ -325,8 +326,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-slate-400 font-mono text-xs">
-            <Sliders className="w-6 h-6 mx-auto mb-2 text-slate-300" />
+          <div className="text-center py-8 text-slate-600 font-mono text-xs font-medium">
+            <Sliders className="w-7 h-7 mx-auto mb-2.5 text-slate-400" />
             Pilih layer di panel kiri atau kanvas untuk mengedit properti slab.
           </div>
         )}

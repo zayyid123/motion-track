@@ -66,19 +66,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <input
           type="text"
           value={project.name}
+          placeholder="Nama Proyek..."
           onChange={(e) => onProjectNameChange(e.target.value)}
-          className="font-mono text-sm px-2.5 py-1 rounded-lg border border-transparent hover:border-slate-200 focus:border-[#ff6b35] focus:outline-none bg-transparent hover:bg-slate-50 transition w-44 sm:w-60 text-slate-800 font-medium"
+          className="font-mono text-sm px-2.5 py-1 rounded-lg border border-slate-300 hover:border-slate-400 focus:border-[#ff6b35] focus:outline-none bg-slate-50 transition w-44 sm:w-60 text-slate-900 font-bold placeholder:text-slate-500"
         />
       </div>
 
       {/* Playback Controls & Zoom */}
-      <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+      <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-300">
         <button
           onClick={onTogglePlay}
-          className={`p-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1.5 px-3 ${
+          className={`p-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1.5 px-3 ${
             isPlaying
               ? 'bg-[#ff6b35] text-white shadow-sm shadow-orange-200'
-              : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+              : 'bg-white text-slate-900 hover:bg-slate-50 border border-slate-300'
           }`}
           title={isPlaying ? 'Pause Animation' : 'Play Animation'}
         >
@@ -88,35 +89,35 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
         <button
           onClick={onResetFrame}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white transition"
+          className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-white transition"
           title="Reset Frame"
         >
           <RotateCcw className="w-4 h-4" />
         </button>
 
-        <div className="h-4 w-px bg-slate-200 mx-1" />
+        <div className="h-4 w-px bg-slate-300 mx-1" />
 
         {/* Zoom Controls */}
         <button
           onClick={() => onZoomChange(Math.max(0.4, Number((zoom - 0.1).toFixed(1))))}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white transition"
+          className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-white transition"
           title="Zoom Out"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
-        <span className="text-xs font-mono text-slate-600 w-10 text-center">
+        <span className="text-xs font-mono text-slate-900 font-bold w-10 text-center">
           {Math.round(zoom * 100)}%
         </span>
         <button
           onClick={() => onZoomChange(Math.min(2.0, Number((zoom + 0.1).toFixed(1))))}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white transition"
+          className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-white transition"
           title="Zoom In"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
           onClick={() => onZoomChange(1.0)}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white transition"
+          className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-white transition"
           title="Reset Zoom"
         >
           <Maximize2 className="w-3.5 h-3.5" />
@@ -127,10 +128,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <div className="flex items-center gap-2">
         <button
           onClick={onToggleAISidebar}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-medium transition border ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition border ${
             isAISidebarOpen
-              ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-sm'
-              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+              ? 'bg-blue-50 border-blue-400 text-blue-800 shadow-sm'
+              : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50'
           }`}
         >
           <Sparkles className="w-3.5 h-3.5 text-blue-600" />
@@ -139,7 +140,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
         <button
           onClick={onLoadJSON}
-          className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition border border-slate-200 bg-white"
+          className="p-2 rounded-xl text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition border border-slate-300 bg-white"
           title="Buka File Proyek JSON"
         >
           <FolderOpen className="w-4 h-4" />
@@ -147,7 +148,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
         <button
           onClick={onSaveJSON}
-          className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition border border-slate-200 bg-white"
+          className="p-2 rounded-xl text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition border border-slate-300 bg-white"
           title="Simpan Proyek JSON"
         >
           <Save className="w-4 h-4" />
@@ -155,7 +156,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
         <button
           onClick={onOpenSettings}
-          className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition border border-slate-200 bg-white"
+          className="p-2 rounded-xl text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition border border-slate-300 bg-white"
           title="AI Settings"
         >
           <Settings className="w-4 h-4" />
