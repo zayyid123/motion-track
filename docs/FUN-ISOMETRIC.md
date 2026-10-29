@@ -5,13 +5,18 @@ outline, leaned isometric faces, and motion played from a library of After
 Effects–grade keyframe presets. This document records how that style is applied
 to the in-app AI assistant so generated stickers look like the rest of the set.
 
-> Style and presets adapted from the **fun-isometric** agent skill by
+> Style, motion presets and the sticker set are adapted from the **fun-isometric**
+> agent skill by
 > [Kelvin Adithya](https://x.com/KelvinAdithya) —
 > [github.com/kelvinkn17/skills](https://github.com/kelvinkn17/skills) ·
 > [skills.klvn.dev/fun-isometric](https://skills.klvn.dev/fun-isometric) —
 > heavily inspired by the stickers in [Slush](https://slush.app). MIT licensed.
 
 ## Where it lives
+
+- `src/lib/funIsometric/library.ts` — 24 hand-designed stickers vendored from the
+  skill, plus `getTemplate` / `TEMPLATE_IDS`. See [the sticker
+  library](#the-sticker-library).
 
 - `src/lib/ai/prompt.ts` — the system prompt carries the **HOUSE STYLE** and
   **MOTION (pick by VERB)** sections, so every generation follows the rules
@@ -66,6 +71,32 @@ advisory:
 - **Reference images.** Vision requests follow the same pipeline: one dominant
   silhouette first, 2–4 overlapping parts, then small ink details, all inside a
   single group.
+
+## The sticker library
+
+Hand-drawing with primitives will never match a sticker that was drawn by hand,
+so the studio **ships the designed set**. `src/lib/funIsometric/library.ts`
+vendors 24 icons from the fun-isometric skill (`pen`, `folder`, `heart`, `coins`,
+`bell`, `calendar`, `padlock`, `gift`, `plane`, `search`, `chat`, `phone`,
+`toggle`, `streak`, `notes`, `play`, `mailbox`, `headphones`, `trophy`, `camera`,
+`pin`, `cloud`, `bulb`, `battery`), each with exact paths, a single clear read
+and its own motion preset.
+
+- **AI.** The prompt lists the ids and tells the model to emit
+  `{"type":"insert_template","name":"<id>","paletteId":"<palette>"}` whenever the
+  subject is in the library — before it considers drawing anything. The action
+  replaces the canvas with the designed sticker (deep-cloned, so the constants
+  are never mutated), applies an optional palette and facing, and is **exempt
+  from auto-fit/auto-centre** so the author's placement survives. Inserted layers
+  are given ids (`ensureLayerIds`), because the shipped designs leave decorative
+  layers anonymous and the editor's hide / lock / delete / reorder controls
+  target layers by id.
+- **UI.** The left sidebar's "Sticker Library" panel lists the same set; picking
+  one loads it like any template.
+- **Rule of thumb for freehand.** Anything not in the library is hand-drawn
+  *simply*: one dominant silhouette, 1–3 overlapping details, one sparkle. Fewer
+  parts, correctly placed, always read better than many. The prompt's house style
+  states this as "Simple beats busy".
 
 ## Motion by verb
 

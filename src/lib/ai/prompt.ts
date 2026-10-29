@@ -1,5 +1,6 @@
 import { PALETTES } from '@/lib/funIsometric/fun';
 import { MOTION_PRESETS } from '@/lib/funIsometric/presets';
+import { TEMPLATE_IDS } from '@/lib/funIsometric/library';
 import type { Icon, Layer, Palette, View, Vec } from '@/lib/funIsometric/fun';
 import type { ChatMessage } from './types';
 
@@ -40,7 +41,21 @@ const HOUSE_STYLE = `FUN-ISOMETRIC HOUSE STYLE (this studio draws in the fun-iso
 - Slabs: every body is a slab - give it "depth" (1 for a body, 0.2 to 0.8 for a thin part) so it extrudes along the view's fixed direction and its side always falls the same way.
 - Parts: build a hero object from 3 to 6 parts, each with its own thickness and role (a raised label, a plate behind a keyhole, a collar, a base, side buttons) - never one flat shape with the detail painted on. Overlap every joint so the object reads as one body: an earcup sits over the end of its band, a lid over the rim, a handle over the body - never place parts edge to edge. Detail is sparse and in ink: one keyhole, two pupils, a few seam lines, one inset rim over a highlight.
 - Proportions (this is what makes it read): stack every part of an object around ONE shared centre at the layer origin (0,0), using dx/dy as each piece's centre. Keep a whole object inside about +/-160 px. The single biggest piece (the body/silhouette) is roughly 140 to 220 px; details are 10 to 60 px. For symmetric objects mirror dx for the left/right parts and keep dy the same on both sides.
-- Sparkles: small "spark" shapes in "white" with the outline, sized 14 to 30, placed off the subject and timed to the action's beat (the slam, the landing, the reveal).`;
+- Sparkles: small "spark" shapes in "white" with the outline, sized 14 to 30, placed off the subject and timed to the action's beat (the slam, the landing, the reveal).
+- Simple beats busy: ONE dominant silhouette plus 1 to 3 small overlapping details plus one sparkle reads instantly; a pile of medium pieces reads as mush. When in doubt, remove a part.`;
+
+/** The hand-designed sticker set, offered to the model as a first choice. */
+const libraryIds = TEMPLATE_IDS.join(', ');
+const LIBRARY = `STICKER LIBRARY (CHECK THIS FIRST - it is the quality the user expects):
+The studio ships ${TEMPLATE_IDS.length} finished, hand-tuned fun-isometric stickers. They are already smooth, simple and perfectly proportioned, so NEVER hand-draw a subject that is in this list - insert the designed one instead with a single action:
+  {"type":"insert_template","name":"<id>","paletteId":"<palette id>"}
+It replaces the canvas with the finished sticker (its parts and its own motion preset included). Optional "facing":"right"|"left"|"front"|"flat".
+Available ids: ${libraryIds}.
+Rules:
+- Match the subject, not the vibe: "make me a padlock", "a bell", "headphones", "a coin" -> insert_template("padlock" | "bell" | "headphones" | "coins").
+- If only a close cousin exists (user wants "wireless earbuds" but only "headphones" exists), hand-draw it - never insert a wrong object.
+- Wrap nothing, group nothing: insert_template brings its own structure. Just pick a sensible palette.
+- Anything NOT in the library is hand-drawn from primitives (see CRAFTING DETAILED ARTWORK), and it must stay simple: one silhouette, 1 to 3 details, one sparkle.`;
 
 /** Reads the first keyframe value from a static value or an animation track. */
 function readNumber(value: unknown, fallback: number): number {
@@ -204,9 +219,10 @@ MOTION (pick by VERB, not by object):
 - Put the action in the first half of the loop and let the rest hold still; the hold is the feel. Do not fill it with idle wobble.
 - Accents pop on the beat: give one or two sparkle/highlight layers "twinkle", "glint" or "sparkle" - still inside the group. Pop with the preset's scale, never with "opacity".
 
+${LIBRARY}
+
 CRAFTING DETAILED ARTWORK (IMPORTANT):
-A layer may contain MANY shapes. Complex stickers are built by stacking several shapes inside one layer, not by using one primitive per layer.
-- Use "shapes": [ ... ] inside add_layer to draw a whole composed object in one layer. Each entry draws one piece and can override fill, depth, line, and round.
+A layer may contain MANY shapes. Complex stickers are built by stacking several shapes inside one layer, not by using one primitive per layer.- Use "shapes": [ ... ] inside add_layer to draw a whole composed object in one layer. Each entry draws one piece and can override fill, depth, line, and round.
 - Every shape entry supports: shape ("rect"|"circle"|"spark"|"star"|"pill"|"ring"|"arch"|"path"), width, height, dx/dy (the CENTRE of the piece, relative to the layer origin 0,0), dx2/dy2 (top-left corner instead of centre, for rect/pill), fill, depth, line, round. Width/height are the piece's size in px. The line field is either a boolean (false hides this piece's outline) or an outline width in px (number); round is a corner radius in px (number).
 - Use "arch" for a curved band: width/height set its span and "thickness" sets the band width in px (default 16% of the shape). It is a half-ellipse opening UPWARD like a rainbow: its feet are on the bottom edge of its box (dy + height/2) and its crest is on the top edge. Perfect for headphone headbands, handles, smiles, arches and lanyards. Use "pill" for rounded bars and earcups, "ring" for donuts and rims, and "rotation" on the layer (180) when you need the arch upside down.
 - For organic or illustrative forms (bulb glass, keys, leaves, faces) draw with a path shape: supply "path" (raw SVG path data). It is automatically scaled to fit width x height and centred on dx/dy, so write the coordinates in ANY space you like and do NOT worry about exact numbers - no "viewBox" is needed and a rough path is fine. Order shapes back-to-front (largest silhouette first, details and highlights last).
@@ -215,7 +231,8 @@ A layer may contain MANY shapes. Complex stickers are built by stacking several 
 
 CREATING FROM SCRATCH (GENERATIVE REQUESTS):
 When the user asks to create or generate an animation or object (e.g. "create a glowing light bulb animation with sparkles", "make a floating coin", "generate a sparkling star"):
-1. First emit {"type":"clear_layers"} to wipe existing canvas layers.
+0. FIRST check the STICKER LIBRARY. If the subject is listed, emit {"type":"insert_template","name":"<id>","paletteId":"<palette id>"} (optionally with "facing") and STOP - do not hand-draw it.
+1. Otherwise emit {"type":"clear_layers"} to wipe existing canvas layers.
 2. Select an appropriate palette: {"type":"set_palette","paletteId":"sunset"} (or "matcha", "slush", "candy", "riso", "clay").
 3. Name the project: {"type":"rename_project","name":"..."}.
 4. Create ONE group container for the whole sticker BEFORE adding pieces: {"type":"create_group","id":"<slug>","name":"<Human Name>","motionPreset":"<verb preset>"}. Choose the preset from the object's VERB (see MOTION): e.g. a coin bounces, a bell wiggles, a lock clasps, a bulb floats. One action, carried by the group.
@@ -248,6 +265,7 @@ ${FEW_SHOT_EXAMPLE}
 
 ACTIONS
 {"type":"clear_layers"}
+{"type":"insert_template","name":"<sticker id>","paletteId"?:"<palette id>","facing"?:"right"|"left"|"front"|"flat"}
 {"type":"create_group","id"?:string,"name"?:string,"motionPreset"?:"<preset id>","position"?:[x,y],"outline"?:number}
 {"type":"update_layer","layerId":"<id>","name"?:string,"position"?:[x,y],"rotation"?:number,"scale"?:[sx,sy],"opacity"?:number,"tilt"?:[x,y],"hidden"?:boolean,"locked"?:boolean,"motionPreset"?:"<preset id>","fill"?:"<role>","depth"?:number,"outline"?:number}
 {"type":"add_layer","shape"?:"rect"|"circle"|"spark"|"star"|"pill"|"ring"|"arch","shapes"?:[shapeSpec],"name"?:string,"width"?:number,"height"?:number,"position"?:[x,y],"rotation"?:number,"scale"?:[sx,sy],"opacity"?:number,"fill"?:"<role>","depth"?:number,"outline"?:number,"motionPreset"?:"<preset id>","groupId"?:"<group id>"}

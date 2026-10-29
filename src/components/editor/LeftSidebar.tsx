@@ -6,7 +6,8 @@ import {
   Plus,
 } from 'lucide-react';
 import { Icon, VIEWS, View } from '@/lib/funIsometric';
-import { padlock, chat, search, coins, plane, blankProject } from '@/lib/funIsometric/icons';
+import { blankProject } from '@/lib/funIsometric/icons';
+import { TEMPLATE_ICONS } from '@/lib/funIsometric/library';
 
 interface LeftSidebarProps {
   icon: Icon;
@@ -16,13 +17,15 @@ interface LeftSidebarProps {
   onAddShape: (type: 'rect' | 'circle' | 'spark') => void;
 }
 
+const prettyName = (slug: string) =>
+  slug
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
 const TEMPLATES = [
   { name: '+ Blank Page', icon: blankProject, desc: 'clean canvas' },
-  { name: 'Padlock', icon: padlock, desc: 'clasp, shackle' },
-  { name: 'Chat Bot', icon: chat, desc: 'wobble, look' },
-  { name: 'Search Lens', icon: search, desc: 'twist, sparkle' },
-  { name: 'Springing Coins', icon: coins, desc: 'bounce, glint' },
-  { name: 'Paper Plane', icon: plane, desc: 'drift 3D' },
+  ...TEMPLATE_ICONS.map((t) => ({ name: prettyName(t.name), icon: t, desc: 'sticker' })),
 ];
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = ({
@@ -37,9 +40,9 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       {/* Templates / Reference Stickers */}
       <div className="p-3.5 border-b border-slate-200/70">
         <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold mb-2 block">
-          Preset Templates (Slush Set)
+          Sticker Library (Slush Set)
         </label>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto pr-0.5">
           {TEMPLATES.map((tmpl) => (
             <button
               key={tmpl.name}

@@ -52,6 +52,18 @@ describe('AI prompt', () => {
     expect(prompt).toContain('latch');
   });
 
+  it('offers the designed sticker library before hand-drawing', () => {
+    const prompt = buildSystemPrompt(context);
+
+    expect(prompt).toContain('STICKER LIBRARY');
+    expect(prompt).toContain('insert_template');
+    // Every shipped sticker id is advertised to the model.
+    for (const id of ['headphones', 'padlock', 'coins', 'bell', 'calendar', 'mailbox']) {
+      expect(prompt).toContain(id);
+    }
+    expect(prompt).toContain('Simple beats busy');
+  });
+
   it('maps chat history and appends the new user turn', () => {
     const apiMessages = toApiMessages(messages, 'New request', context);
 

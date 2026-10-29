@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { PALETTES, rect, VIEWS } from '@/lib/funIsometric/fun';
+import { PALETTES, ensureLayerIds, rect, scene, VIEWS } from '@/lib/funIsometric/fun';
 import type { Layer } from '@/lib/funIsometric/fun';
+import { getTemplate, TEMPLATE_ICONS } from '@/lib/funIsometric/library';
 import type { StudioDoc } from '@/lib/projectFile';
-import { applyAIActionsToDoc, buildShape, centerComposition, fitComposition, parseAIResponse, transformPathData } from './actions';
+import { applyAIActionsToDoc, buildShape, centerComposition, compositionBounds, fitComposition, parseAIResponse, transformPathData } from './actions';
 import type { AIAction } from './actions';
 
 const layer = (id: string, overrides: Partial<Layer> = {}): Layer => ({
@@ -850,5 +851,107 @@ describe('fitComposition', () => {
     const icon = bigIcon();
     (icon.layers[0].shapes as Array<{ d: string }>)[0] = { d: rect(-50, -50, 100, 100, 0) };
     expect(fitComposition(icon, 380)).toBe(icon);
+  });
+});
+
+describe('insert_template', () => {
+  it('replaces the canvas with the designed sticker', () => {
+    const result = apply(makeDoc(), [{ type: 'insert_template', name: 'headphones' }]);
+    expect(result.skipped).toEqual([]);
+    const icon = result.doc.icon;
+    expect(icon.name).toBe('Headphones');
+    expect(icon.frames).toBe(180);
+    expect(icon.layers.length).toBeGreaterThan(1);
+    expect(icon.layers.some((layer) => layer.id === 'set')).toBe(true);
+    // The old layers are reported as removed so the editor can clear selection.
+    expect(result.removed).toContain('body');
+    expect(result.applied.join(' ')).toContain('Headphones');
+  });
+
+  it('accepts a palette and a facing view', () => {
+    const result = apply(makeDoc(), [
+      { type: 'insert_template', name: 'coins', paletteId: 'matcha', facing: 'left' },
+    ]);
+    expect(result.skipped).toEqual([]);
+    expect(result.doc.paletteId).toBe('matcha');
+    expect(result.doc.palette.main).toBe(PALETTES.matcha.main);
+    expect(result.doc.facing).toBe('left');
+  });
+
+  it('skips an unknown sticker and leaves the composition alone', () => {
+    const result = apply(makeDoc(), [{ type: 'insert_template', name: 'spaceship' }]);
+    expect(result.changed).toBe(false);
+    expect(result.skipped.join(' ')).toContain('spaceship');
+    expect(result.doc.icon.layers.map((layer) => layer.id)).toContain('body');
+  });
+
+  it('does not auto-fit or recentre a designed sticker', () => {
+    const result = apply(makeDoc(), [
+      { type: 'clear_layers' },
+      { type: 'insert_template', name: 'padlock' },
+    ]);
+    expect(result.applied.join(' ')).not.toContain('Fit and centered');
+  });
+
+  it('gives every inserted layer a unique id so editors can target it', () => {
+    // The vendored stickers omit ids on decorative layers, which used to break
+    // the hide / lock / delete controls (they target layers by id).
+    const result = apply(makeDoc(), [{ type: 'insert_template', name: 'headphones' }]);
+    const ids = result.doc.icon.layers.map((layer) => layer.id);
+    expect(ids.every((id) => typeof id === 'string' && id.length > 0)).toBe(true);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(result.selectedLayerId).toBeTruthy();
+    expect(ids).toContain(result.selectedLayerId);
+  });
+});
+
+describe('sticker library', () => {
+  it('ships designed, finite, drawable stickers', () => {
+    expect(TEMPLATE_ICONS.length).toBeGreaterThanOrEqual(24);
+    for (const icon of TEMPLATE_ICONS) {
+      expect(icon.frames).toBeGreaterThan(0);
+      expect(icon.layers.length).toBeGreaterThan(0);
+      const ids = icon.layers.map((layer) => layer.id).filter((id): id is string => !!id);
+      expect(new Set(ids).size).toBe(ids.length);
+
+      const bounds = compositionBounds(icon);
+      expect(bounds).not.toBeNull();
+      for (const value of [bounds!.minX, bounds!.minY, bounds!.maxX, bounds!.maxY]) {
+        expect(Number.isFinite(value)).toBe(true);
+      }
+      // Every sticker must actually occupy the stage.
+      expect(bounds!.maxX - bounds!.minX).toBeGreaterThan(40);
+      expect(bounds!.maxY - bounds!.minY).toBeGreaterThan(40);
+
+      const sc = scene(icon, icon.still ?? 60);
+      expect(sc.parts.length).toBeGreaterThan(0);
+      for (const part of sc.parts) {
+        for (const d of part.ds) expect(String(d)).not.toContain('NaN');
+      }
+    }
+  });
+
+  it('normalises every layer to a unique id, keeping parent links intact', () => {
+    for (const icon of TEMPLATE_ICONS) {
+      const before = new Set(icon.layers.map((layer) => layer.id).filter(Boolean) as string[]);
+      // Parents must already resolve, or assigning fresh ids could orphan children.
+      for (const layer of icon.layers) {
+        if (layer.parent) expect(before.has(layer.parent)).toBe(true);
+      }
+
+      const withIds = ensureLayerIds(icon);
+      const ids = withIds.layers.map((layer) => layer.id);
+      expect(ids.every((id) => typeof id === 'string' && id.length > 0)).toBe(true);
+      expect(new Set(ids).size).toBe(ids.length);
+
+      // Idempotent: a normalised icon is returned untouched.
+      expect(ensureLayerIds(withIds)).toBe(withIds);
+    }
+  });
+
+  it('resolves templates by id, case-insensitively', () => {
+    expect(getTemplate('Headphones')?.name).toBe('headphones');
+    expect(getTemplate(' padlock ')?.name).toBe('padlock');
+    expect(getTemplate('nope')).toBeUndefined();
   });
 });

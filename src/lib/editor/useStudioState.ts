@@ -15,7 +15,7 @@ import {
 import type { HistoryState, MutationOptions } from '@/lib/editor/history';
 import { applyAIActionsToDoc } from '@/lib/ai/actions';
 import type { AIAction, AIApplyOutcome } from '@/lib/ai/actions';
-import { ellipse, PALETTES, rect, spark, VIEWS } from '@/lib/funIsometric/fun';
+import { ellipse, ensureLayerIds, PALETTES, rect, spark, VIEWS } from '@/lib/funIsometric/fun';
 import type { Icon, Layer, Palette, View } from '@/lib/funIsometric/fun';
 import { blankProject, padlock } from '@/lib/funIsometric/icons';
 import { createMotion } from '@/lib/funIsometric/presets';
@@ -28,7 +28,12 @@ import {
 } from '@/lib/projectFile';
 import type { StudioDoc } from '@/lib/projectFile';
 
-const cloneIcon = (icon: Icon): Icon => JSON.parse(JSON.stringify(icon)) as Icon;
+/**
+ * Deep clone of an icon before it enters the editor. Ids are guaranteed here so
+ * the per-layer controls (hide, lock, delete, reorder) work on every design,
+ * including the vendored stickers that omit ids on decorative layers.
+ */
+const cloneIcon = (icon: Icon): Icon => ensureLayerIds(JSON.parse(JSON.stringify(icon)) as Icon);
 
 const defaultDoc = (): StudioDoc => ({
   icon: cloneIcon(padlock),
@@ -158,9 +163,10 @@ export function useStudioState(clock: PlaybackClock): StudioState {
     if (!draft) return;
     // Restoring the autosaved draft after hydration is a deliberate one-time
     // external-store sync; reading localStorage during render would desync SSR.
+    const restored = { ...draft, icon: ensureLayerIds(draft.icon) };
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHistory(createHistory(draft, 'Restored draft'));
-    const initialLayer = firstVisualLayer(draft.icon);
+    setHistory(createHistory(restored, 'Restored draft'));
+    const initialLayer = firstVisualLayer(restored.icon);
     setSelectedLayerIds(initialLayer ? [initialLayer] : []);
     clock.seek(0);
   }, [clock]);

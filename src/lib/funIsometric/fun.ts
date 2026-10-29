@@ -303,6 +303,25 @@ type Ctx = CanvasRenderingContext2D
 export type Part = { L: Layer; pose: Pose; ds: Array<string>; trims: Array<number> }
 export type Scene = { f: number; ext: Vec; parts: Array<Part>; world: (L: Layer) => Pose; byId: Map<string, Layer> }
 
+let idSeq = 0
+
+/**
+ * Guarantees every layer has a stable `id`. The editor targets layers by id
+ * (hide, lock, delete, reorder), and several built-in designs omit ids on
+ * decorative layers, so a missing id silently disables those controls. Parent
+ * references are left untouched: a parent that is referenced must already have
+ * an id, and generated ids are collision-free.
+ */
+export function ensureLayerIds(icon: Icon, prefix = 'layer'): Icon {
+  if (icon.layers.every((layer) => layer.id)) return icon
+  const layers = icon.layers.map((layer, index) => {
+    if (layer.id) return layer
+    idSeq += 1
+    return { ...layer, id: `${prefix}-${index}-${idSeq.toString(36)}` }
+  })
+  return { ...icon, layers }
+}
+
 export function scene(icon: Icon, frame: number): Scene {
   const f = mod(frame, icon.frames)
   const byId = new Map(icon.layers.filter((l) => l.id).map((l) => [l.id as string, l]))

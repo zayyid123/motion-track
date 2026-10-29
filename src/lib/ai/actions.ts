@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { at, ellipse, PALETTES, pill, rect, ring, scene, spark, star, VIEWS } from '@/lib/funIsometric/fun';
+import { at, ellipse, ensureLayerIds, PALETTES, pill, rect, ring, scene, spark, star, VIEWS } from '@/lib/funIsometric/fun';
 import type { Icon, Layer, Palette, View } from '@/lib/funIsometric/fun';
 import type { Bounds } from '@/lib/geometry/bounds';
 import { createMotion, isMotionPresetId } from '@/lib/funIsometric/presets';
+import { getTemplate, TEMPLATE_IDS } from '@/lib/funIsometric/library';
 import type { StudioDoc } from '@/lib/projectFile';
 const ROLE = z.enum(['main', 'gold', 'tint', 'ok', 'hot', 'deep', 'white', 'grey', 'paper', 'ink']);
 const FACE = z.enum(['right', 'left', 'front', 'flat']);
@@ -128,6 +129,13 @@ export const aiActionSchema = z.discriminatedUnion('type', [
     position: pair,
     outline: rangedNumber(0, 40),
   }),
+  z.object({
+    type: z.literal('insert_template'),
+    /** Designed sticker id or name, e.g. "headphones", "padlock", "coins". */
+    name: z.string().min(1).max(60),
+    paletteId: z.string().min(1).optional(),
+    facing: FACE.optional(),
+  }),
   z.object({ type: z.literal('clear_layers') }),
   z.object({ type: z.literal('add_shapes'), layerId: z.string().min(1), shapes: shapesField }),
   z.object({ type: z.literal('delete_layer'), layerId: z.string().min(1) }),
@@ -167,6 +175,17 @@ const labelOf = (layer: Layer): string => layer.name ?? layer.id ?? 'layer';
 /** Lowercases a label into a stable, referenceable layer id slug. */
 const slugify = (value: string): string =>
   value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'group';
+
+/** "headphones" -> "Headphones"; used to name inserted library stickers. */
+const prettyTemplateName = (slug: string): string =>
+  slug
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+/** Structured deep clone with a JSON fallback; library icons are shared constants. */
+const deepClone = <T>(value: T): T =>
+  typeof structuredClone === 'function' ? structuredClone(value) : (JSON.parse(JSON.stringify(value)) as T);
 
 /** Samples an SVG endpoint-arc into points so bounds capture its bulge. */
 function arcPoints(
@@ -353,7 +372,7 @@ const unionBounds = (a: Bounds, b: Bounds): Bounds => ({
 });
 
 /** World-space bounds of every rendered shape in the icon at frame 0. */
-function compositionBounds(icon: Icon): Bounds | null {
+export function compositionBounds(icon: Icon): Bounds | null {
   const sc = scene(icon, 0);
   const extrude = at(icon.extrude ?? [0, 0], sc.f);
   let union: Bounds | null = null;
@@ -1121,6 +1140,58 @@ function applyOne(
       break;
     }
 
+    case 'insert_template': {
+      const template = getTemplate(action.name);
+      if (!template) {
+        skipped.push(`Unknown sticker "${action.name}". Available: ${TEMPLATE_IDS.join(', ')}.`);
+        break;
+      }
+
+      const previousIds = icon.layers
+        .map((layer) => layer.id)
+        .filter((id): id is string => typeof id === 'string');
+
+      const targetFacing = action.facing ?? facing;
+      const view = VIEWS[targetFacing];
+      facing = targetFacing;
+
+      // Designed stickers keep their own hand-tuned geometry; only the facing
+      // tilt/extrude is reapplied when a view is requested. Ids are filled in
+      // because the editor targets layers by id (hide, lock, delete, reorder).
+      const layers = ensureLayerIds({
+        ...icon,
+        layers: deepClone(template.layers).map((layer) =>
+          layer.tilt && layer.tiltFromView !== false ? { ...layer, tilt: view.tilt } : layer
+        ),
+      }).layers;
+
+      icon = {
+        ...icon,
+        name: prettyTemplateName(template.name),
+        frames: template.frames,
+        line: template.line,
+        extrude: view.extrude,
+        layers,
+      };
+
+      if (action.paletteId) {
+        const cleanId = action.paletteId.toLowerCase().trim();
+        const next = PALETTES[cleanId as keyof typeof PALETTES];
+        if (next) {
+          paletteId = cleanId;
+          palette = { ...next };
+        } else {
+          skipped.push(`Unknown palette "${action.paletteId}"; kept the current palette.`);
+        }
+      }
+
+      changed = true;
+      removed.push(...previousIds);
+      selectedLayerId = layers.find((layer) => !layer.isGroup)?.id ?? null;
+      applied.push(`Inserted the designed "${icon.name}" sticker`);
+      break;
+    }
+
     case 'add_layer': {
       if (action.motionPreset !== undefined && !isMotionPresetId(action.motionPreset)) {
         skipped.push(`Unknown motion preset "${action.motionPreset}".`);
@@ -1339,12 +1410,24 @@ export function applyAIActionsToDoc(
   // Freshly generated artwork is fit to the canvas and recentered so it never
   // lands off-canvas or overflows. Only batches that clear the canvas first are
   // touched, so wrapping or editing an existing composition is never disturbed.
-  const generatedFresh = actions.some((action) => action.type === 'clear_layers');
+  // Designed library stickers are already placed, so they are left exactly as
+  // their author laid them out.
+  const insertedTemplate = actions.some((action) => action.type === 'insert_template');
+  const generatedFresh = actions.some((action) => action.type === 'clear_layers') && !insertedTemplate;
   if (changed && generatedFresh) {
     const fitted = centerComposition(fitComposition(current.icon));
     if (fitted !== current.icon) {
       current = { ...current, icon: fitted };
       applied.push('Fit and centered the composition on the canvas');
+    }
+  }
+
+  // Guarantee ids on every layer the AI produced or replaced, so the editor's
+  // per-layer controls (hide, lock, delete, reorder) keep working afterwards.
+  if (changed) {
+    const withIds = ensureLayerIds(current.icon, 'ai-layer');
+    if (withIds !== current.icon) {
+      current = { ...current, icon: withIds };
     }
   }
 

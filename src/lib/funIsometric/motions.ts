@@ -126,3 +126,25 @@ export const sparkle = (start: number): Motion => ({
 export const slide = (to: Vec, start: number, hold = 60, len = 60): Motion => ({
   p: [[start, [0, 0], SNAP], [start + len, to, 0], [start + len + hold, to, SNAP], [start + len * 2 + hold, [0, 0]]],
 })
+
+/** Scenes: dealt in from off to rest in 60 frames, all speed up front, swooping in level. */
+export const deal = (from: Vec, turn: number, start = 0, grow = false): Motion => ({
+  p: shift<Vec>([[0, from, OUT, [[0, 0], [from[0] * 0.6, 0]]], [60, [0, 0]]], start),
+  r: shift([[0, turn, OUT], [60, 0]], start),
+  ...(grow ? { s: shift<Vec>([[0, [85, 85], SNAP], [60, [100, 100]]], start) } : {}),
+})
+
+/** Falls away on an ease in, 28 frames: clears a scene before it loops. */
+export const fall = (to: Vec, start: number, len = 28): Motion => ({ p: [[start, [0, 0], DROP], [start + len, to]] })
+
+/** Text lines: erased in 15 frames, staggered 5 apart, drawn back on a slow start. For a shape's trim. */
+export const erase = (start: number, back: number): Track<number> => [
+  [start, 1, [0.3, 0, 0.1, 1]],
+  [start + 15, 0, 0],
+  [back, 0, [0.9, 0, 0.7, 1]],
+  [back + 15, 1],
+]
+
+/** Flames: steps between drawn shapes every 40 frames, snapping out of each. For a shape's d. */
+export const flicker = (shapes: ReadonlyArray<string>, gap = 40): Track<string> =>
+  [...shapes, shapes[0]].map((d, i) => [i * gap, d, [0.33, 0, 0, 1]] as const)

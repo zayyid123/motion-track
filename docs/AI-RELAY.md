@@ -81,8 +81,16 @@ generation matches the rest of the engine. See
   presets are skipped and listed under the message. The rest of the batch still
   applies.
 - Supported actions: `update_layer`, `add_layer`, `add_shapes`, `create_group`,
-  `clear_layers`, `delete_layer`, `select_layer`, `set_palette`,
-  `set_palette_color`, `set_outline`, `set_facing`, `rename_project`.
+  `insert_template`, `clear_layers`, `delete_layer`, `select_layer`,
+  `set_palette`, `set_palette_color`, `set_outline`, `set_facing`,
+  `rename_project`.
+- `insert_template` swaps the whole canvas for one of the hand-designed
+  fun-isometric stickers (`src/lib/funIsometric/library.ts`, 24 of them). It
+  carries its own layers, parts and motion, and is never auto-fit, so the
+  author's placement is preserved. The prompt tells the model to prefer it over
+  hand-drawing any subject that is in the library. Batches that change the icon
+  are run through `ensureLayerIds`, so every layer ends up with an id and the
+  editor's per-layer controls (hide, lock, delete, reorder) keep working.
 - Models that ignore the format and answer in prose keep working: the parser
   treats the text as a normal reply with no actions. It also accepts fenced
   JSON blocks and a bare array of action objects.
@@ -90,8 +98,8 @@ generation matches the rest of the engine. See
   afterwards: root layers are shifted so the drawn composition bounds land on
   `(250, 250)`. Grouped children sit at the local origin and ride their group,
   so one shift recenters the whole sticker (`centerComposition`). Batches that
-  do not clear the canvas are never recentered, so wrapping or editing existing
-  art does not yank it around.
+  do not clear the canvas (or that insert a designed sticker) are never
+  recentered, so wrapping or editing existing art does not yank it around.
 - The prompt instructs the model to emit actions only when the user explicitly
   asks for a change, so advice questions do not edit the project.
 
