@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import {
   Play,
   Pause,
@@ -29,10 +29,16 @@ interface MultiTrackTimelineProps {
   totalFrames: number;
   clock: PlaybackClock;
   selectedLayerId: string | null;
+  selectedLayerIds?: string[];
   onSelectLayer: (id: string | null) => void;
+  onToggleSelectLayer?: (id: string, additive?: boolean) => void;
+  onSelectMultipleLayers?: (ids: string[]) => void;
+  onSelectAllLayers?: () => void;
+  onClearSelection?: () => void;
   onToggleHideLayer: (id: string) => void;
   onToggleLockLayer: (id: string) => void;
   onDeleteLayer: (id: string) => void;
+  onDeleteLayers?: (ids: string[]) => void;
   onUpdateLayerTiming: (id: string, ip: number, op: number) => void;
   onMoveLayerIndex: (fromIndex: number, toIndex: number, targetGroupId?: string | null) => void;
 }
@@ -42,10 +48,16 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
   totalFrames,
   clock,
   selectedLayerId,
+  selectedLayerIds,
   onSelectLayer,
+  onToggleSelectLayer,
+  onSelectMultipleLayers,
+  onSelectAllLayers,
+  onClearSelection,
+  onDeleteLayer,
+  onDeleteLayers,
   onToggleHideLayer,
   onToggleLockLayer,
-  onDeleteLayer,
   onUpdateLayerTiming,
   onMoveLayerIndex,
 }) => {
@@ -73,7 +85,14 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
     startX: number;
     initialIp: number;
     initialOp: number;
+    selectedClips?: Array<{ id: string; initialIp: number; initialOp: number }>;
   } | null>(null);
+
+  const effectiveSelectedIds = useMemo(() => {
+    if (selectedLayerIds && selectedLayerIds.length > 0) return selectedLayerIds;
+    if (selectedLayerId) return [selectedLayerId];
+    return [];
+  }, [selectedLayerId, selectedLayerIds]);
 
   // Resize timeline height upward (drag top border to expand/collapse vertically)
   useEffect(() => {
@@ -176,17 +195,34 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
         const nextOp = Math.min(totalFrames, Math.max(trimming.initialIp + 5, trimming.initialOp + dFrames));
         onUpdateLayerTiming(trimming.layerId, trimming.initialIp, nextOp);
       } else if (trimming.type === 'body') {
-        let nextIp = trimming.initialIp + dFrames;
-        let nextOp = nextIp + duration;
-        if (nextIp < 0) {
-          nextIp = 0;
-          nextOp = duration;
+        if (trimming.selectedClips && trimming.selectedClips.length > 1) {
+          trimming.selectedClips.forEach((clip) => {
+            const clipDuration = clip.initialOp - clip.initialIp;
+            let nextIp = clip.initialIp + dFrames;
+            let nextOp = nextIp + clipDuration;
+            if (nextIp < 0) {
+              nextIp = 0;
+              nextOp = clipDuration;
+            }
+            if (nextOp > totalFrames) {
+              nextOp = totalFrames;
+              nextIp = totalFrames - clipDuration;
+            }
+            onUpdateLayerTiming(clip.id, nextIp, nextOp);
+          });
+        } else {
+          let nextIp = trimming.initialIp + dFrames;
+          let nextOp = nextIp + duration;
+          if (nextIp < 0) {
+            nextIp = 0;
+            nextOp = duration;
+          }
+          if (nextOp > totalFrames) {
+            nextOp = totalFrames;
+            nextIp = totalFrames - duration;
+          }
+          onUpdateLayerTiming(trimming.layerId, nextIp, nextOp);
         }
-        if (nextOp > totalFrames) {
-          nextOp = totalFrames;
-          nextIp = totalFrames - duration;
-        }
-        onUpdateLayerTiming(trimming.layerId, nextIp, nextOp);
       }
     };
 
@@ -367,8 +403,31 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
               style={{ width: `${controlWidth}px` }}
               className="px-3 flex items-center justify-between text-[10px] font-mono text-slate-600 font-bold uppercase shrink-0 border-r border-slate-200"
             >
-              <span>Tracks ({layers.length})</span>
-              <span className="text-[9px] text-slate-400 font-normal">Controls & Hierarchy</span>
+              <div className="flex items-center gap-1.5 truncate">
+                <span>Tracks ({layers.length})</span>
+                {effectiveSelectedIds.length > 0 && (
+                  <span className="text-[9px] font-semibold bg-orange-200 text-orange-900 px-1.5 py-0.2 rounded-full">
+                    {effectiveSelectedIds.length} sel
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {onSelectAllLayers && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (effectiveSelectedIds.length === layers.length && onClearSelection) {
+                        onClearSelection();
+                      } else {
+                        onSelectAllLayers();
+                      }
+                    }}
+                    className="text-[9px] text-[#ff6b35] hover:underline font-mono uppercase"
+                  >
+                    {effectiveSelectedIds.length === layers.length ? 'Clear All' : 'Select All'}
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Resizer Header Handle */}
@@ -434,7 +493,7 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
             <div className="divide-y divide-slate-100">
               {layers.map((layer, idx) => {
                 const layerId = layer.id || `layer-${idx}`;
-                const isSelected = selectedLayerId === layerId;
+                const isSelected = effectiveSelectedIds.includes(layerId);
                 const isLocked = Boolean(layer.locked);
                 const isDragOver = dragOverTrackIndex === idx;
 
@@ -450,7 +509,29 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
                 return (
                   <div
                     key={layerId}
-                    onClick={() => onSelectLayer(layerId)}
+                    onClick={(e) => {
+                      if (e.shiftKey) {
+                        const lastSelectedId = selectedLayerId;
+                        const lastIdx = layers.findIndex((l) => l.id === lastSelectedId);
+                        if (lastIdx !== -1 && onSelectMultipleLayers) {
+                          const start = Math.min(lastIdx, idx);
+                          const end = Math.max(lastIdx, idx);
+                          const rangeIds = layers
+                            .slice(start, end + 1)
+                            .map((l) => l.id || '')
+                            .filter(Boolean);
+                          onSelectMultipleLayers(rangeIds);
+                          return;
+                        }
+                      }
+                      if (e.metaKey || e.ctrlKey) {
+                        if (onToggleSelectLayer) {
+                          onToggleSelectLayer(layerId, true);
+                          return;
+                        }
+                      }
+                      onSelectLayer(layerId);
+                    }}
                     onDragOver={(e) => {
                       e.preventDefault();
                       e.dataTransfer.dropEffect = 'move';
@@ -587,9 +668,21 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
                         </button>
 
                         <button
-                          onClick={() => onDeleteLayer(layerId)}
+                          onClick={() => {
+                            if (effectiveSelectedIds.length > 1 && effectiveSelectedIds.includes(layerId) && onDeleteLayers) {
+                              onDeleteLayers(effectiveSelectedIds);
+                            } else {
+                              onDeleteLayer(layerId);
+                            }
+                          }}
                           className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
-                          title={layer.isGroup ? 'Delete this group container' : 'Delete this layer'}
+                          title={
+                            effectiveSelectedIds.length > 1 && effectiveSelectedIds.includes(layerId)
+                              ? `Delete ${effectiveSelectedIds.length} selected layers`
+                              : layer.isGroup
+                              ? 'Delete this group container'
+                              : 'Delete this layer'
+                          }
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -618,13 +711,34 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
                         }}
                         onMouseDown={(e) => {
                           e.stopPropagation();
-                          onSelectLayer(layerId);
+                          const isAlreadySelected = effectiveSelectedIds.includes(layerId);
+                          let nextSelected = effectiveSelectedIds;
+                          if (e.shiftKey || e.metaKey || e.ctrlKey) {
+                            if (onToggleSelectLayer) onToggleSelectLayer(layerId, true);
+                            nextSelected = isAlreadySelected
+                              ? effectiveSelectedIds.filter((id) => id !== layerId)
+                              : [...effectiveSelectedIds, layerId];
+                          } else if (!isAlreadySelected) {
+                            onSelectLayer(layerId);
+                            nextSelected = [layerId];
+                          }
+
+                          const clipsToMove = layers
+                            .filter((l) => nextSelected.includes(l.id || ''))
+                            .map((l) => ({
+                              id: l.id || '',
+                              initialIp: l.ip ?? 0,
+                              initialOp: l.op ?? totalFrames,
+                            }));
+
                           setTrimming({
                             layerId,
                             type: 'body',
                             startX: e.clientX,
                             initialIp: ip,
                             initialOp: op,
+                            selectedClips:
+                              clipsToMove.length > 0 ? clipsToMove : [{ id: layerId, initialIp: ip, initialOp: op }],
                           });
                         }}
                       >

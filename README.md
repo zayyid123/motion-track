@@ -9,8 +9,9 @@ The app is a Next.js 16 App Router project. Everything runs locally in the brows
 - **Isometric editor** with four viewing directions (`right`, `left`, `front`, `flat`), precise hit testing, draggable/rotatable/scalable layers, zoom, and keyboard nudging.
 - **Multi-track timeline** with per-layer in/out points, trimming, reordering, hide/lock controls, and a seamless loop.
 - **Role-based palettes** (`main`, `gold`, `tint`, `ok`, `hot`, `deep`, `white`, `grey`, `paper`, `ink`) with six built-in themes and custom color editing.
-- **16 motion presets** shared by the inspector and the AI prompt, with unknown ids safely treated as still.
+- **21 motion presets** shared by the inspector and the AI prompt, with unknown ids safely treated as still.
 - **Group containers** that drive the motion of their child layers.
+- **fun-isometric house style**, applied to the AI assistant so generated stickers match [the skill](docs/FUN-ISOMETRIC.md) (flat slabs, thick ink outline, leaned faces, verb-driven motion).
 - **Transactional undo/redo** with coalesced slider edits and a 50-entry history.
 - **Autosave and versioned project files** (v2) with legacy icon-JSON migration.
 - **Export pipeline**:
@@ -52,16 +53,15 @@ The `predev` and `prebuild` scripts copy the ffmpeg.wasm ESM wrapper into `publi
 
 Direct mode is the default: the browser calls the OpenAI-compatible provider and the API key never leaves the tab. Relay mode sends the key through `/api/ai-proxy` and is only used after the user grants consent in **AI Settings**.
 
-The relay only talks to HTTPS hosts on an allowlist. Set `AI_PROXY_ALLOWED_HOSTS` to a comma-separated list (wildcards such as `*.example.com` are supported) or to `*` to allow any public HTTPS host:
+The relay forwards requests to any AI model API endpoint (HTTP or HTTPS). You can optionally restrict hosts by setting `AI_PROXY_ALLOWED_HOSTS` to a comma-separated list (wildcards such as `*.example.com` are supported):
 
 ```bash
 # .env.local
-AI_PROXY_ALLOWED_HOSTS="api.openai.com,api.groq.com,*.example.com"
+# Leave unset or empty to allow all AI model API URLs
+AI_PROXY_ALLOWED_HOSTS=""
 ```
 
-If the variable is unset, a curated list of public AI providers is used. Private IPs, loopback, link-local, multicast, and `.local`/`.internal` hostnames are always rejected. See [docs/AI-RELAY.md](docs/AI-RELAY.md).
-
-Self-hosted gateways that only expose plain HTTP can be relayed by setting an explicit host entry plus `AI_PROXY_ALLOW_HTTP=1`. Traffic to that host is unencrypted; use it only on a trusted network. `*` never enables HTTP.
+By default, all AI model endpoints (including remote providers and local/custom AI gateways) are allowed. See [docs/AI-RELAY.md](docs/AI-RELAY.md).
 
 ## Project structure
 
@@ -79,7 +79,7 @@ src/
   lib/geometry/        Path bounds and precise hit testing
 ```
 
-Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data flow and design decisions, [docs/PROJECT_FORMAT.md](docs/PROJECT_FORMAT.md) for the v2 file schema, and [docs/EXPORT.md](docs/EXPORT.md) for the format matrix and limitations.
+Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data flow and design decisions, [docs/PROJECT_FORMAT.md](docs/PROJECT_FORMAT.md) for the v2 file schema, [docs/FUN-ISOMETRIC.md](docs/FUN-ISOMETRIC.md) for the drawing and motion house style applied to the AI assistant, and [docs/EXPORT.md](docs/EXPORT.md) for the format matrix and limitations.
 
 ## Export notes
 

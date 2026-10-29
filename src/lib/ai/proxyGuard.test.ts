@@ -61,8 +61,8 @@ describe('host rules', () => {
   });
 
   it('parses env allowlists', () => {
-    expect(parseAllowlist(undefined)).toEqual([...DEFAULT_ALLOWED_HOSTS]);
-    expect(parseAllowlist('')).toEqual([...DEFAULT_ALLOWED_HOSTS]);
+    expect(parseAllowlist(undefined)).toBeNull();
+    expect(parseAllowlist('')).toBeNull();
     expect(parseAllowlist('*')).toBeNull();
     expect(parseAllowlist('api.example.com, *.example.org')).toEqual([
       'api.example.com',
@@ -79,8 +79,20 @@ describe('assertSafeEndpoint', () => {
     expect(url.hostname).toBe('api.openai.com');
   });
 
-  it('rejects plain HTTP', () => {
-    expect(() => assertSafeEndpoint('http://api.openai.com/v1', allowlist)).toThrow(/HTTPS/);
+  it('accepts any public or custom HTTPS endpoint when allowlist is null', () => {
+    const url = assertSafeEndpoint('https://custom-ai.example.com/v1/chat/completions', null);
+    expect(url.hostname).toBe('custom-ai.example.com');
+  });
+
+  it('allows plain HTTP by default', () => {
+    expect(assertSafeEndpoint('http://api.openai.com/v1').protocol).toBe('http:');
+    expect(assertSafeEndpoint('http://43.157.204.35:20128/v1').port).toBe('20128');
+  });
+
+  it('rejects plain HTTP when allowHttp is false', () => {
+    expect(() =>
+      assertSafeEndpoint('http://api.openai.com/v1', allowlist, { allowHttp: false })
+    ).toThrow(/HTTPS/);
   });
 
   it('rejects credentials in the URL', () => {
@@ -89,13 +101,25 @@ describe('assertSafeEndpoint', () => {
     );
   });
 
-  it('rejects localhost and private IP literals', () => {
-    expect(() => assertSafeEndpoint('https://localhost:8443/v1', null)).toThrow(/not allowed/);
-    expect(() => assertSafeEndpoint('https://127.0.0.1/v1', null)).toThrow(/private|reserved/);
-    expect(() => assertSafeEndpoint('https://[::1]/v1', null)).toThrow(/private|reserved/);
+  it('allows localhost and private IP literals by default for local AI instances', () => {
+    expect(assertSafeEndpoint('http://localhost:11434/v1').hostname).toBe('localhost');
+    expect(assertSafeEndpoint('http://127.0.0.1:11434/v1').hostname).toBe('127.0.0.1');
+    expect(assertSafeEndpoint('http://192.168.1.10:20128/v1').hostname).toBe('192.168.1.10');
   });
 
-  it('rejects hosts outside the allowlist', () => {
+  it('rejects localhost and private IP literals when allowPrivate is false', () => {
+    expect(() =>
+      assertSafeEndpoint('https://localhost:8443/v1', null, { allowPrivate: false })
+    ).toThrow(/not allowed/);
+    expect(() =>
+      assertSafeEndpoint('https://127.0.0.1/v1', null, { allowPrivate: false })
+    ).toThrow(/private|reserved/);
+    expect(() =>
+      assertSafeEndpoint('https://[::1]/v1', null, { allowPrivate: false })
+    ).toThrow(/private|reserved/);
+  });
+
+  it('rejects hosts outside the allowlist when an explicit allowlist is provided', () => {
     expect(() => assertSafeEndpoint('https://evil.example.com/v1', allowlist)).toThrow(
       /AI_PROXY_ALLOWED_HOSTS/
     );
@@ -104,32 +128,6 @@ describe('assertSafeEndpoint', () => {
   it('rejects privileged non-HTTPS ports but allows high ports', () => {
     expect(() => assertSafeEndpoint('https://api.openai.com:80/v1', allowlist)).toThrow(/port/);
     expect(assertSafeEndpoint('https://api.openai.com:8443/v1', allowlist).port).toBe('8443');
-  });
-
-  it('allows plain HTTP only as an explicit opt-in for an allowlisted host', () => {
-    const privateGateway = ['43.157.204.35'];
-    const endpoint = 'http://43.157.204.35:20128/v1/chat/completions';
-
-    expect(() => assertSafeEndpoint(endpoint, privateGateway)).toThrow(/HTTPS/);
-    expect(assertSafeEndpoint(endpoint, privateGateway, { allowHttp: true }).port).toBe('20128');
-    expect(
-      assertSafeEndpoint('http://api.example.com/v1', ['api.example.com'], { allowHttp: true }).protocol
-    ).toBe('http:');
-  });
-
-  it('never enables plain HTTP through a wildcard allowlist', () => {
-    expect(() =>
-      assertSafeEndpoint('http://api.example.com/v1', null, { allowHttp: true })
-    ).toThrow(/explicit host allowlist/);
-  });
-
-  it('still blocks private HTTP hosts even when HTTP is enabled', () => {
-    expect(() =>
-      assertSafeEndpoint('http://192.168.1.10:20128/v1', ['192.168.1.10'], { allowHttp: true })
-    ).toThrow(/private|reserved/);
-    expect(() =>
-      assertSafeEndpoint('http://localhost:20128/v1', ['localhost'], { allowHttp: true })
-    ).toThrow(/not allowed/);
   });
 
   it('rejects malformed URLs', () => {

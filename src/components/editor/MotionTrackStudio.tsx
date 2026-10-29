@@ -28,7 +28,7 @@ export function MotionTrackStudio() {
   const [clock] = useState(() => new PlaybackClock());
   const studio = useStudioState(clock);
   const { actions } = studio;
-  const { undo, redo, selectedLayerId } = studio;
+  const { undo, redo, selectedLayerIds } = studio;
   const isPlaying = useIsPlaying(clock);
   const speed = usePlaybackSpeed(clock);
   const { toast } = useToast();
@@ -89,15 +89,25 @@ export function MotionTrackStudio() {
         redo();
         return;
       }
-      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedLayerId) {
+      if (mod && event.key.toLowerCase() === 'a') {
         event.preventDefault();
-        actions.deleteLayer(selectedLayerId);
+        actions.selectAllLayers();
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        actions.clearSelection();
+        return;
+      }
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedLayerIds.length > 0) {
+        event.preventDefault();
+        actions.deleteLayers(selectedLayerIds);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [actions, redo, selectedLayerId, undo]);
+  }, [actions, redo, selectedLayerIds, undo]);
 
   const handleSaveJSON = useCallback(() => {
     try {
@@ -178,9 +188,10 @@ export function MotionTrackStudio() {
         canRedo={studio.canRedo}
         onUndo={studio.undo}
         onRedo={studio.redo}
-        hasSelectedLayer={Boolean(studio.selectedLayerId)}
+        hasSelectedLayer={studio.selectedLayerIds.length > 0}
+        selectedCount={studio.selectedLayerIds.length}
         onDeleteSelectedLayer={() => {
-          if (studio.selectedLayerId) actions.deleteLayer(studio.selectedLayerId);
+          if (studio.selectedLayerIds.length > 0) actions.deleteLayers(studio.selectedLayerIds);
         }}
         activeMobileTab={mobileTab}
         onSelectMobileTab={setMobileTab}
@@ -220,8 +231,14 @@ export function MotionTrackStudio() {
             palette={studio.palette}
             clock={clock}
             selectedLayerId={studio.selectedLayerId}
+            selectedLayerIds={studio.selectedLayerIds}
             onSelectLayer={studio.setSelectedLayerId}
+            onToggleSelectLayer={actions.toggleSelectLayer}
+            onSelectMultipleLayers={actions.setSelectedLayerIds}
+            onSelectAllLayers={actions.selectAllLayers}
+            onClearSelection={actions.clearSelection}
             onUpdateLayerPosition={actions.moveLayerLive}
+            onUpdateLayersPosition={actions.moveLayersLive}
             onUpdateLayerRotation={actions.rotateLayerLive}
             onUpdateLayerScale={actions.scaleLayerLive}
             onBeginTransform={() => actions.beginTransform('Transform layer')}
@@ -276,10 +293,16 @@ export function MotionTrackStudio() {
         totalFrames={icon.frames || 180}
         clock={clock}
         selectedLayerId={studio.selectedLayerId}
+        selectedLayerIds={studio.selectedLayerIds}
         onSelectLayer={studio.setSelectedLayerId}
+        onToggleSelectLayer={actions.toggleSelectLayer}
+        onSelectMultipleLayers={actions.setSelectedLayerIds}
+        onSelectAllLayers={actions.selectAllLayers}
+        onClearSelection={actions.clearSelection}
         onToggleHideLayer={toggleLayerHidden}
         onToggleLockLayer={toggleLayerLocked}
         onDeleteLayer={actions.deleteLayer}
+        onDeleteLayers={actions.deleteLayers}
         onUpdateLayerTiming={actions.updateLayerTiming}
         onMoveLayerIndex={actions.moveLayerIndex}
       />

@@ -89,7 +89,12 @@ The ffmpeg wrapper and core (`ffmpeg-core.js`, `ffmpeg-core.wasm`) are served lo
 - `parseCompletion.ts` — tolerant completion parser (`message.content`,
   `delta.content` chunks, error envelopes, `[DONE]`, mislabeled content types).
 - `actions.ts` — zod-validated action schema, response parser, and pure document
-  reducer used by the auto-apply flow.
+  reducer used by the auto-apply flow. It also builds composite artwork
+  (`shapes[]`, `path` + `viewBox`), wraps generated art in a group
+  (`create_group` + `groupId` children at the local origin), and recenters
+  generative batches on the 500x500 stage (`centerComposition`, DOM-free bounds).
+- `prompt.ts` — the studio-aware system prompt, including the fun-isometric
+  house style and verb-to-preset motion guide (see `docs/FUN-ISOMETRIC.md`).
 - `proxyGuard.ts` — pure URL, allowlist, and private-address checks used by the route and tests.
 
 ### Auto-apply flow
@@ -110,7 +115,7 @@ fields are skipped and reported under the chat message instead of failing the
 batch. The prompt tells the model to emit actions only when the user explicitly
 asks for a change; advice questions return `actions: []`.
 
-The relay route adds a 64 KB body cap, a 30 s upstream timeout, a per-IP in-memory rate limit, `redirect: 'error'`, DNS resolution checks, and SSE passthrough. It never logs API keys and sanitizes upstream error text.
+The relay route adds a 10 MB body cap (sized for multimodal vision payloads), a 30 s upstream timeout, a per-IP in-memory rate limit, `redirect: 'error'`, DNS resolution checks, and SSE passthrough. It never logs API keys and sanitizes upstream error text.
 
 See [AI-RELAY.md](AI-RELAY.md) for the threat model and deployment notes.
 

@@ -16,6 +16,7 @@ export interface RenderCanvasOptions {
   palette?: Partial<Palette>;
   showHelpers?: boolean;
   selectedLayerId?: string | null;
+  selectedLayerIds?: ReadonlyArray<string> | string[];
   /** Optional precomputed scene so callers can reuse it for hit testing. */
   sceneData?: Scene;
 }
@@ -39,6 +40,7 @@ export function renderInteractiveSticker(
     palette,
     showHelpers = false,
     selectedLayerId = null,
+    selectedLayerIds,
   } = options;
 
   ctx.clearRect(0, 0, width, height);
@@ -52,11 +54,32 @@ export function renderInteractiveSticker(
   const sc = options.sceneData ?? scene(icon, frame);
   render(ctx, icon, sc, { ...(palette ?? {}) } as Palette);
 
-  if (showHelpers && selectedLayerId) {
-    const selectedPart = sc.parts.find((part) => part.L.id === selectedLayerId);
-    if (selectedPart) {
-      const bounds = layerBounds(selectedPart, icon, sc);
-      if (bounds) drawLayerHelpers(ctx, selectedPart.pose, bounds, Boolean(selectedPart.L.locked));
+  if (showHelpers) {
+    const ids =
+      selectedLayerIds && selectedLayerIds.length > 0
+        ? selectedLayerIds
+        : selectedLayerId
+        ? [selectedLayerId]
+        : [];
+
+    const isMulti = ids.length > 1;
+    const primaryId = selectedLayerId ?? (ids.length > 0 ? ids[ids.length - 1] : null);
+
+    for (const id of ids) {
+      const selectedPart = sc.parts.find((part) => part.L.id === id);
+      if (selectedPart) {
+        const bounds = layerBounds(selectedPart, icon, sc);
+        if (bounds) {
+          const isPrimary = !isMulti || id === primaryId;
+          drawLayerHelpers(
+            ctx,
+            selectedPart.pose,
+            bounds,
+            Boolean(selectedPart.L.locked),
+            !isPrimary
+          );
+        }
+      }
     }
   }
 
@@ -64,7 +87,13 @@ export function renderInteractiveSticker(
   return sc;
 }
 
-function drawLayerHelpers(ctx: CanvasRenderingContext2D, pose: Pose, bounds: Bounds, isLocked: boolean) {
+function drawLayerHelpers(
+  ctx: CanvasRenderingContext2D,
+  pose: Pose,
+  bounds: Bounds,
+  isLocked: boolean,
+  isSecondary: boolean = false
+) {
   ctx.save();
   const [a, b, c, d, e, f] = pose.m;
   ctx.transform(a, b, c, d, e, f);
@@ -74,7 +103,7 @@ function drawLayerHelpers(ctx: CanvasRenderingContext2D, pose: Pose, bounds: Bou
 
   ctx.strokeStyle = isLocked ? '#f59e0b' : '#2563eb';
   ctx.lineWidth = 2;
-  ctx.setLineDash(isLocked ? [4, 4] : [6, 6]);
+  ctx.setLineDash(isLocked ? [4, 4] : isSecondary ? [5, 5] : [6, 6]);
   ctx.strokeRect(box.minX, box.minY, box.maxX - box.minX, box.maxY - box.minY);
   ctx.setLineDash([]);
 
@@ -90,6 +119,19 @@ function drawLayerHelpers(ctx: CanvasRenderingContext2D, pose: Pose, bounds: Bou
     ctx.lineWidth = 2.5;
     ctx.strokeStyle = '#ffffff';
     ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
+  // In multi-selection, secondary layers only need corner indicator markers
+  if (isSecondary) {
+    for (const corner of handles.corners) {
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 2;
+      ctx.fillRect(corner.x - 5, corner.y - 5, 10, 10);
+      ctx.strokeRect(corner.x - 5, corner.y - 5, 10, 10);
+    }
     ctx.restore();
     return;
   }

@@ -50,6 +50,7 @@ interface ToolbarProps {
   onUndo?: () => void;
   onRedo?: () => void;
   hasSelectedLayer?: boolean;
+  selectedCount?: number;
   onDeleteSelectedLayer?: () => void;
   activeMobileTab?: 'canvas' | 'templates' | 'properties';
   onSelectMobileTab?: (tab: 'canvas' | 'templates' | 'properties') => void;
@@ -77,6 +78,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onUndo,
   onRedo,
   hasSelectedLayer = false,
+  selectedCount = 0,
   onDeleteSelectedLayer,
   activeMobileTab = 'canvas',
   onSelectMobileTab,
@@ -155,11 +157,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             {hasSelectedLayer && (
               <button
                 onClick={onDeleteSelectedLayer}
-                aria-label="Delete selected layer"
-                className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition"
-                title="Delete Selected Layer"
+                aria-label={selectedCount > 1 ? `Delete ${selectedCount} selected layers` : 'Delete selected layer'}
+                className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition flex items-center gap-1"
+                title={selectedCount > 1 ? `Delete ${selectedCount} Selected Layers` : 'Delete Selected Layer'}
               >
                 <Trash2 className="w-4 h-4" />
+                {selectedCount > 1 && (
+                  <span className="text-[10px] font-mono font-bold bg-red-100 text-red-700 px-1.5 py-0.2 rounded-full">
+                    {selectedCount}
+                  </span>
+                )}
               </button>
             )}
           </div>

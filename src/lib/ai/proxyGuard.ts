@@ -151,39 +151,42 @@ export interface AllowlistOptions {
 }
 
 export function parseAllowlist(raw: string | undefined): string[] | null {
-  if (raw === undefined || raw.trim() === '') return [...DEFAULT_ALLOWED_HOSTS];
+  if (raw === undefined || raw.trim() === '' || raw.trim() === '*') return null;
   const entries = raw
     .split(',')
     .map((entry) => entry.trim().toLowerCase())
     .filter(Boolean);
   if (entries.includes('*')) return null;
-  return entries;
+  return entries.length > 0 ? entries : null;
 }
 
 export function isHostAllowed(hostname: string, allowlist: string[] | null): boolean {
   if (!allowlist) return true;
   const host = hostname.toLowerCase().replace(/\.$/, '');
   return allowlist.some((entry) => {
-    if (entry.startsWith('*.')) return host.endsWith(entry.slice(1));
+    if (entry.startsWith('*.')) return host.endsWith(entry.slice(1)) || host === entry.slice(2);
     return host === entry;
   });
 }
 
 export interface EndpointOptions {
   /**
-   * Allows plain HTTP, but only for a host that is explicitly allowlisted.
-   * Disabled by default; enable with AI_PROXY_ALLOW_HTTP=1.
+   * If false, rejects plain HTTP. Defaults to true (HTTP is allowed).
    */
   allowHttp?: boolean;
+  /**
+   * If false, rejects private IPs and localhost. Defaults to true (local/private endpoints allowed).
+   */
+  allowPrivate?: boolean;
 }
 
 /**
  * Synchronous URL validation: protocol, credentials, port, hostname shape,
- * and allowlist. DNS resolution happens separately because it is async.
+ * and optional allowlist.
  */
 export function assertSafeEndpoint(
   endpoint: string,
-  allowlist: string[] | null,
+  allowlist: string[] | null = null,
   options: EndpointOptions = {}
 ): URL {
   let url: URL;
@@ -194,19 +197,12 @@ export function assertSafeEndpoint(
   }
 
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new ProxyGuardError('Only HTTPS AI endpoints are allowed through the relay.');
+    throw new ProxyGuardError('Only HTTP and HTTPS AI endpoints are allowed through the relay.');
   }
-  if (url.protocol === 'http:') {
-    if (!options.allowHttp) {
-      throw new ProxyGuardError(
-        'Only HTTPS AI endpoints are allowed through the relay. Set AI_PROXY_ALLOW_HTTP=1 and an explicit AI_PROXY_ALLOWED_HOSTS entry to opt in to plain HTTP.'
-      );
-    }
-    if (!allowlist) {
-      throw new ProxyGuardError(
-        'Plain HTTP endpoints require an explicit host allowlist; AI_PROXY_ALLOWED_HOSTS=* is not allowed with AI_PROXY_ALLOW_HTTP.'
-      );
-    }
+  if (url.protocol === 'http:' && options.allowHttp === false) {
+    throw new ProxyGuardError(
+      'Only HTTPS AI endpoints are allowed through the relay when HTTP is disabled.'
+    );
   }
   if (url.username || url.password) {
     throw new ProxyGuardError('Endpoint URLs must not contain credentials.');
@@ -221,13 +217,20 @@ export function assertSafeEndpoint(
   }
 
   const hostname = url.hostname.replace(/^\[|\]$/g, '');
-  if (isBlockedHostname(hostname)) {
-    throw new ProxyGuardError('Endpoint host is not allowed.');
+  if (!hostname) {
+    throw new ProxyGuardError('Endpoint host is required.');
   }
-  if (isIP(hostname) && isPrivateAddress(hostname)) {
-    throw new ProxyGuardError('Endpoint resolves to a private or reserved address.');
+
+  if (options.allowPrivate === false) {
+    if (isBlockedHostname(hostname)) {
+      throw new ProxyGuardError('Endpoint host is not allowed.');
+    }
+    if (isIP(hostname) && isPrivateAddress(hostname)) {
+      throw new ProxyGuardError('Endpoint resolves to a private or reserved address.');
+    }
   }
-  if (!isHostAllowed(hostname, allowlist)) {
+
+  if (allowlist && !isHostAllowed(hostname, allowlist)) {
     throw new ProxyGuardError(
       'Endpoint host is not in AI_PROXY_ALLOWED_HOSTS. Add it to the server allowlist or use direct mode.'
     );

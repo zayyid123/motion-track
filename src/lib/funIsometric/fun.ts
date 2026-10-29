@@ -68,6 +68,8 @@ export type Layer = {
   r?: Anim<number>
   s?: Anim<Vec>
   o?: Anim<number>
+  /** Per-layer ink outline width in px; overrides `icon.line` for this layer's shapes. */
+  line?: number
   tilt?: Vec
   /** True when `tilt` came from the selected view and should follow facing changes. */
   tiltFromView?: boolean
@@ -354,6 +356,9 @@ export function render(ctx: Ctx, icon: Icon, sc: Scene, palette: Palette) {
     const { m, o, x, k } = pose
     const [det, dm] = [m[0] * m[3] - m[1] * m[2], new DOMMatrix(m)]
     const grow = Math.sqrt(Math.abs(det) / Math.abs(k || 1))
+    // Per-layer outline width overrides the icon default; a shape can still opt
+    // out with line:false or set its own explicit width.
+    const layerW = typeof L.line === 'number' ? L.line : W
     ctx.globalAlpha = Math.min(1, o / 100)
     const mask = L.clip ? byId.get(L.clip) : undefined
     if (mask) {
@@ -368,7 +373,7 @@ export function render(ctx: Ctx, icon: Icon, sc: Scene, palette: Palette) {
       const d = ds[i]
       const path = new Path2D()
       path.addPath(pathOf(d), dm)
-      const w = (S.line === false ? 0 : typeof S.line === 'number' ? S.line : W) * grow
+      const w = (S.line === false ? 0 : typeof S.line === 'number' ? S.line : layerW) * grow
       ctx.setTransform(base)
       ctx.lineCap = S.round ? 'round' : 'butt'
       ctx.lineJoin = S.round ? 'round' : 'miter'

@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertCircle, Bot, Check, Send, Sparkles, User, X } from 'lucide-react';
+import { AlertCircle, Bot, Check, Image as ImageIcon, Send, Sparkles, User, X } from 'lucide-react';
 import type { AISettings, ChatMessage } from '@/lib/ai/types';
 import { parseAIResponse } from '@/lib/ai/actions';
 import type { AIAction, AIApplyOutcome } from '@/lib/ai/actions';
 import { sendChatMessage } from '@/lib/ai/transport';
+import { fileToDataUrl } from '@/lib/ai/imageUtils';
 import type { Icon, Palette, View } from '@/lib/funIsometric/fun';
 
 interface AISidebarProps {
@@ -22,10 +23,10 @@ interface AISidebarProps {
 }
 
 const QUICK_ACTIONS = [
-  'Suggest a color-role mix for this layer',
-  'Recommend a motion preset for this sticker',
-  'Explain group containers and motion sync',
-  'What slab depth and outline width should I use?',
+  '💡 Create a detailed glowing light bulb sticker with sparkles',
+  '🪙 Create a detailed gold coin with engraved star',
+  '⭐ Create a layered sparkling star with highlights',
+  '🎨 Change palette to matcha',
 ];
 
 const WELCOME =
@@ -47,11 +48,15 @@ export const AISidebar: React.FC<AISidebarProps> = ({
     { id: 'welcome', sender: 'ai', text: WELCOME, timestamp: 0 },
   ]);
   const [input, setInput] = useState('');
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [pendingImageName, setPendingImageName] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const counterRef = useRef(1);
   const abortRef = useRef<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -61,9 +66,25 @@ export const AISidebar: React.FC<AISidebarProps> = ({
 
   const relayNeedsConsent = settings.transport === 'relay' && !settings.relayConsent;
 
+  const handleAttachFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Please attach an image file (PNG, JPG, WebP, GIF).');
+      return;
+    }
+    try {
+      setErrorMessage(null);
+      const dataUrl = await fileToDataUrl(file);
+      setPendingImage(dataUrl);
+      setPendingImageName(file.name);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to read image.');
+    }
+  };
+
   const handleSend = async (promptToSend?: string) => {
     const text = (promptToSend ?? input).trim();
-    if (!text || isLoading) return;
+    const imageToSend = pendingImage ?? undefined;
+    if ((!text && !imageToSend) || isLoading) return;
 
     if (!settings.apiKey) {
       setErrorMessage('Add an API key in Settings before using the assistant.');
@@ -79,13 +100,17 @@ export const AISidebar: React.FC<AISidebarProps> = ({
     const userMessage: ChatMessage = {
       id: `msg-${counterRef.current}`,
       sender: 'user',
-      text,
+      text: text || 'Create an isometric animated sticker based on this reference image.',
+      image: imageToSend,
       timestamp: counterRef.current,
     };
 
     const history = messages;
     setMessages((current) => [...current, userMessage]);
     setInput('');
+    setPendingImage(null);
+    setPendingImageName(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setIsLoading(true);
 
     const controller = new AbortController();
@@ -94,10 +119,11 @@ export const AISidebar: React.FC<AISidebarProps> = ({
     try {
       const raw = await sendChatMessage(
         history,
-        text,
+        text || 'Create an isometric animated sticker based on this reference image.',
         settings,
         { icon, palette, paletteId, facing, selectedLayerId },
-        controller.signal
+        controller.signal,
+        imageToSend
       );
 
       // The model answers with { reply, actions }. Valid actions are applied
@@ -119,6 +145,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
           timestamp: counterRef.current,
           applied: outcome.applied,
           skipped,
+          raw,
         },
       ]);
     } catch (error) {
@@ -222,7 +249,26 @@ export const AISidebar: React.FC<AISidebarProps> = ({
                   : 'rounded-tl-none border border-slate-300 bg-slate-50 text-slate-900'
               }`}
             >
+              {message.image && (
+                <div className="mb-2 overflow-hidden rounded-xl border border-white/20 bg-black/10">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={message.image}
+                    alt="Attached reference"
+                    className="max-h-44 w-auto rounded-lg object-contain"
+                  />
+                </div>
+              )}
               <span className="block whitespace-pre-wrap">{message.text}</span>
+
+              {message.sender === 'ai' &&
+              message.id !== 'welcome' &&
+              (message.applied?.length ?? 0) === 0 &&
+              (message.skipped?.length ?? 0) === 0 ? (
+                <div className="mt-2 border-t border-slate-300/60 pt-1.5 font-mono text-[10px] text-slate-500">
+                  ℹ️ Chat only (no actions executed on canvas).
+                </div>
+              ) : null}
 
               {message.sender === 'ai' &&
               ((message.applied?.length ?? 0) > 0 || (message.skipped?.length ?? 0) > 0) ? (
@@ -304,8 +350,83 @@ export const AISidebar: React.FC<AISidebarProps> = ({
         </div>
       </div>
 
-      <div className="border-t border-slate-200 bg-white p-3">
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          const file = e.dataTransfer.files?.[0];
+          if (file) void handleAttachFile(file);
+        }}
+        className={`border-t border-slate-200 bg-white p-3 transition ${
+          isDragging ? 'bg-orange-50/80 ring-2 ring-inset ring-[#ff6b35]' : ''
+        }`}
+      >
+        {isDragging && (
+          <div className="mb-2 text-center font-mono text-[11px] font-bold text-[#ff6b35]">
+            Drop image here to attach
+          </div>
+        )}
+
+        {pendingImage && (
+          <div className="mb-2.5 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-2 shadow-sm">
+            <div className="flex items-center gap-2 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={pendingImage}
+                alt="Reference preview"
+                className="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-white object-cover"
+              />
+              <div className="min-w-0">
+                <p className="truncate font-mono text-[11px] font-bold text-slate-800">
+                  {pendingImageName || 'Reference image'}
+                </p>
+                <p className="font-mono text-[10px] text-slate-500">Ready to send with prompt</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setPendingImage(null);
+                setPendingImageName(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+              className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+              aria-label="Remove image"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleAttachFile(file);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            title="Attach reference image (or paste/drag)"
+            aria-label="Attach reference image"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-slate-50 text-slate-600 transition hover:border-[#ff6b35] hover:bg-orange-50 hover:text-[#ff6b35]"
+          >
+            <ImageIcon className="h-4 w-4" />
+          </button>
+
           <label htmlFor="ai-chat-input" className="sr-only">
             Ask the AI assistant
           </label>
@@ -314,13 +435,20 @@ export const AISidebar: React.FC<AISidebarProps> = ({
             type="text"
             value={input}
             onChange={(event) => setInput(event.target.value)}
+            onPaste={(event) => {
+              const file = event.clipboardData.files?.[0];
+              if (file && file.type.startsWith('image/')) {
+                event.preventDefault();
+                void handleAttachFile(file);
+              }
+            }}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 void handleSend();
               }
             }}
-            placeholder="Ask a question or describe a change…"
+            placeholder={pendingImage ? 'Add instructions or press Enter…' : 'Ask or attach an image…'}
             className="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-500 focus:border-[#ff6b35] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6b35]/30"
           />
           {isLoading ? (
@@ -336,7 +464,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
             <button
               type="button"
               onClick={() => void handleSend()}
-              disabled={!input.trim()}
+              disabled={!input.trim() && !pendingImage}
               aria-label="Send message"
               className="rounded-xl bg-slate-900 p-2 text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-40"
             >
@@ -345,7 +473,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
           )}
         </div>
         <p className="mt-1.5 font-mono text-[10px] font-medium text-slate-500">
-          Requests are applied to the project automatically as one undo step.
+          Upload an image, paste from clipboard, or type a prompt.
         </p>
       </div>
     </aside>

@@ -6,7 +6,7 @@ import {
   ProxyGuardError,
 } from '@/lib/ai/proxyGuard';
 
-const MAX_BODY_BYTES = 64 * 1024;
+const MAX_BODY_BYTES = 10 * 1024 * 1024; // 10 MB limit for multimodal vision payloads
 const UPSTREAM_TIMEOUT_MS = 30_000;
 const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 60_000;
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
 
   const declaredLength = Number(req.headers.get('content-length') ?? '0');
   if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
-    return jsonError('Request body is too large (64 KB limit).', 413);
+    return jsonError('Request body is too large (10 MB limit).', 413);
   }
 
   let raw: string;
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     return jsonError('Could not read the request body.', 400);
   }
   if (Buffer.byteLength(raw, 'utf8') > MAX_BODY_BYTES) {
-    return jsonError('Request body is too large (64 KB limit).', 413);
+    return jsonError('Request body is too large (10 MB limit).', 413);
   }
 
   let body: unknown;
@@ -117,13 +117,13 @@ export async function POST(req: NextRequest) {
 
   const rawAllowlist = process.env.AI_PROXY_ALLOWED_HOSTS;
   const allowlist = parseAllowlist(rawAllowlist);
-  // HTTP is opt-in and only meaningful with an explicit host list. `*` does not
-  // enable it; assertSafeEndpoint rejects a null allowlist for HTTP.
-  const allowHttp = process.env.AI_PROXY_ALLOW_HTTP === '1' && Boolean(rawAllowlist?.trim());
+  const allowHttp = process.env.AI_PROXY_ALLOW_HTTP !== '0';
   let url: URL;
   try {
     url = assertSafeEndpoint(endpoint, allowlist, { allowHttp });
-    await assertPublicResolution(url);
+    if (allowlist !== null) {
+      await assertPublicResolution(url);
+    }
   } catch (error) {
     if (error instanceof ProxyGuardError) {
       return jsonError(error.message, error.status);

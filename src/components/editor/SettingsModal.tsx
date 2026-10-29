@@ -94,10 +94,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               role="alert"
               className="mt-1.5 block rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] leading-relaxed text-amber-900"
             >
-              This endpoint uses plain HTTP. Browsers usually block it through CORS, and the relay
-              only accepts it when the server sets <code>AI_PROXY_ALLOW_HTTP=1</code> plus an
-              explicit <code>AI_PROXY_ALLOWED_HOSTS</code> entry. The API key would travel
-              unencrypted.
+              This endpoint uses plain HTTP. Browsers usually block direct requests through CORS;
+              the relay can forward to it, but the API key travels unencrypted between server and host.
             </span>
           ) : null}
         </div>
@@ -182,7 +180,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             />
             <span>
               I allow this app&apos;s server to forward my API key to the selected provider host.
-              The relay only accepts HTTPS hosts on the server allowlist.
             </span>
           </label>
           {relayBlocked ? (

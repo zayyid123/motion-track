@@ -57,7 +57,11 @@ does not otherwise interpret the payload, which keeps it provider-agnostic.
 
 ## Project actions from chat
 
-The assistant is not read-only. The system prompt asks for one JSON object:
+The assistant is not read-only. The system prompt (`src/lib/ai/prompt.ts`) also
+carries the **fun-isometric house style** — composition, ink outline, leaned
+faces, slab parts, sparkle beats and a verb-to-preset motion table — so sticker
+generation matches the rest of the engine. See
+[docs/FUN-ISOMETRIC.md](FUN-ISOMETRIC.md). It asks for one JSON object:
 
 ```json
 {
@@ -76,12 +80,18 @@ The assistant is not read-only. The system prompt asks for one JSON object:
 - Invalid actions, unknown layer ids, unknown palettes, and unknown motion
   presets are skipped and listed under the message. The rest of the batch still
   applies.
-- Supported actions: `update_layer`, `add_layer`, `delete_layer`,
-  `select_layer`, `set_palette`, `set_palette_color`, `set_outline`,
-  `set_facing`, `rename_project`.
+- Supported actions: `update_layer`, `add_layer`, `add_shapes`, `create_group`,
+  `clear_layers`, `delete_layer`, `select_layer`, `set_palette`,
+  `set_palette_color`, `set_outline`, `set_facing`, `rename_project`.
 - Models that ignore the format and answer in prose keep working: the parser
   treats the text as a normal reply with no actions. It also accepts fenced
   JSON blocks and a bare array of action objects.
+- Generative batches that start with `clear_layers` are auto-centered
+  afterwards: root layers are shifted so the drawn composition bounds land on
+  `(250, 250)`. Grouped children sit at the local origin and ride their group,
+  so one shift recenters the whole sticker (`centerComposition`). Batches that
+  do not clear the canvas are never recentered, so wrapping or editing existing
+  art does not yank it around.
 - The prompt instructs the model to emit actions only when the user explicitly
   asks for a change, so advice questions do not edit the project.
 
@@ -94,48 +104,27 @@ Implemented in `src/app/api/ai-proxy/route.ts` and the pure helpers in
 
 ### Endpoint validation
 
-- HTTPS by default. Plain HTTP is rejected unless the server explicitly opts in
-  with `AI_PROXY_ALLOW_HTTP=1` **and** the host is in an explicit
-  `AI_PROXY_ALLOWED_HOSTS` list (see below).
+- HTTP and HTTPS endpoints are supported.
 - No embedded credentials (`https://user:pass@host`).
 - Port must be the protocol default (443/80) or ≥ 1024.
-- Hostnames ending in `.local`, `.localhost`, `.internal`, `.home.arpa`, or
-  `.lan` are rejected, as is `localhost`.
-- IP literals and every resolved A/AAAA record are checked against private,
-  loopback, link-local, carrier-grade NAT, multicast, and documentation ranges.
-- DNS is resolved with `lookup(..., { all: true })`; if **any** record is
-  private, the request is rejected. This blocks DNS rebinding to internal
-  addresses.
-- `redirect: 'error'` prevents an allowlisted host from redirecting to an
-  internal target.
-- An optional host allowlist is applied after the address checks.
+- `redirect: 'error'` prevents an upstream host from redirecting requests.
+- All AI model API URLs are permitted by default. If `AI_PROXY_ALLOWED_HOSTS` is explicitly configured with a comma-separated list of hosts, only those hosts are allowed.
 
-### Host allowlist
+### Host allowlist (optional)
 
-`AI_PROXY_ALLOWED_HOSTS` is a comma-separated list. Wildcards are supported on
-the left-most label.
+By default, the relay allows all AI model API URLs without host restrictions.
+If desired, `AI_PROXY_ALLOWED_HOSTS` can be set to a comma-separated list to restrict hosts. Wildcards are supported on the left-most label.
 
 ```bash
 # .env.local
 AI_PROXY_ALLOWED_HOSTS="api.openai.com,api.groq.com,*.example.com"
 ```
 
-- Unset or empty → a curated default list: OpenAI, Anthropic, OpenRouter, Groq,
-  Together, Mistral, DeepSeek, xAI, Perplexity, Google Generative Language,
-  Cohere, and Fireworks.
-- `*` → disables the host allowlist. It does **not** disable HTTPS, port,
-  hostname-suffix, or private-address checks.
+- Unset, empty, or `*` → allows all AI model endpoints through the relay.
 
-### Plain HTTP (opt-in)
+### Plain HTTP
 
-Some self-hosted OpenAI-compatible gateways only expose plain HTTP, and browsers
-block them with CORS. The relay can forward to them, but only when both settings
-are present:
-
-```bash
-AI_PROXY_ALLOWED_HOSTS="43.157.204.35"
-AI_PROXY_ALLOW_HTTP=1
-```
+Self-hosted or local OpenAI-compatible gateways that expose plain HTTP can be relayed. Browsers normally block them with CORS or mixed-content policies, but the relay can forward requests directly. Traffic between the relay and an HTTP gateway is unencrypted; use only on trusted networks. Set `AI_PROXY_ALLOW_HTTP=0` if you wish to enforce HTTPS only.
 
 - `AI_PROXY_ALLOWED_HOSTS` must be explicit; `*` never enables HTTP.
 - Private, loopback, link-local, and internal hostnames remain blocked.
@@ -150,7 +139,7 @@ Restart the dev/production server after changing either variable.
 
 | Limit | Value |
 | --- | --- |
-| Request body | 64 KB (declared and actual) |
+| Request body | 10 MB (declared and actual; sized for multimodal vision payloads) |
 | Messages per request | 50 |
 | Upstream timeout | 30 s for non-streaming |
 | Rate limit | 20 requests per minute per client IP |

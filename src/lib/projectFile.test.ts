@@ -50,6 +50,19 @@ describe('project file v2', () => {
     expect(result.doc.icon.layers).toHaveLength(original.icon.layers.length);
   });
 
+  it('round-trips a per-layer outline width', () => {
+    const original = doc();
+    original.icon = {
+      ...original.icon,
+      layers: original.icon.layers.map((layer, index) => (index === 0 ? { ...layer, line: 9 } : layer)),
+    };
+
+    const result = parseProject(serializeProject(original));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.doc.icon.layers[0].line).toBe(9);
+  });
+
   it('migrates a legacy bare icon JSON', () => {
     const result = parseProject(JSON.stringify(padlock));
 

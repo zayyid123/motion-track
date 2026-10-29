@@ -37,7 +37,8 @@ export async function sendChatMessage(
   userPrompt: string,
   settings: AISettings,
   context?: AIContext,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  userImage?: string
 ): Promise<string> {
   if (!settings.apiKey.trim()) {
     throw new Error('Add an API key in Settings before using the assistant.');
@@ -49,7 +50,7 @@ export async function sendChatMessage(
   }
 
   const endpoint = chatEndpoint(settings.baseUrl);
-  const payload = buildChatPayload(settings.model, messages, userPrompt, context);
+  const payload = buildChatPayload(settings.model, messages, userPrompt, context, userImage);
   const relay = settings.transport === 'relay';
 
   const timeout = new AbortController();

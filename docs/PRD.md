@@ -357,9 +357,10 @@ awal PRD. Dokumen teknis terkait: [ARCHITECTURE.md](ARCHITECTURE.md),
 
 - Transport default adalah direct: key tetap di tab pengguna.
 - Relay server hanya aktif setelah pengguna memberi consent eksplisit.
-- Relay menolak endpoint non-HTTPS secara default (kecuali opt-in eksplisit lewat `AI_PROXY_ALLOW_HTTP=1` dan allowlist host), kredensial di URL, host privat/loopback, rentang IP internal, dan redirect; mendukung allowlist host, batas body 64 KB, timeout 30 detik, rate limit per IP, serta deteksi SSE otomatis (`parseCompletion.ts`).
+- Relay menolak endpoint non-HTTPS secara default (kecuali opt-in eksplisit lewat `AI_PROXY_ALLOW_HTTP=1` dan allowlist host), kredensial di URL, host privat/loopback, rentang IP internal, dan redirect; mendukung allowlist host, batas body 10 MB (untuk payload vision multimodal), timeout 30 detik, rate limit per IP, serta deteksi SSE otomatis (`parseCompletion.ts`).
 - API key tidak pernah dicatat ke log dan pesan error upstream disanitasi.
 - **AI auto-apply:** asisten mengembalikan kontrak JSON `{ reply, actions }`. Aksi divalidasi dengan skema zod (`src/lib/ai/actions.ts`), diterapkan secara atomik ke dokumen sebagai satu langkah undo (`Apply AI changes`), dan aksi yang tidak valid atau referensi layer yang tidak ditemukan dilewati secara aman dengan badge ringkasan pada chat UI.
+- **AI generation (group + center):** karya yang digenerate dibungkus satu group container (`create_group`) sehingga seluruh stiker beranimasi sebagai satu unit; child layer diletakkan di origin lokal (tanpa `position`) agar mengikuti group. Batch generatif yang diawali `clear_layers` otomatis di-recenter ke tengah kanvas 500x500 oleh `centerComposition` (bentuk multi-shape, path `viewBox`, dan bounds bebas-DOM); batch tanpa `clear_layers` tidak pernah di-recenter agar karya lama tidak bergeser.
 
 ### Kualitas
 

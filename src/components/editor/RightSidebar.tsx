@@ -97,17 +97,20 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
 
         <div className="pt-2 border-t border-slate-100">
           <div className="flex justify-between text-[11px] font-mono text-slate-500 mb-1">
-            <span>INK OUTLINE WIDTH</span>
+            <span>DEFAULT INK OUTLINE</span>
             <span className="font-semibold text-slate-800">{outlineWidth}px</span>
           </div>
           <input
             type="range"
-            min="2"
-            max="10"
+            min="0"
+            max="20"
             value={outlineWidth}
-            onChange={(e) => onUpdateOutlineWidth(parseInt(e.target.value) || 5)}
+            onChange={(e) => onUpdateOutlineWidth(parseInt(e.target.value) || 0)}
             className="w-full accent-[#ff6b35] h-1.5 bg-slate-100 rounded-lg cursor-pointer"
           />
+          <p className="mt-1 text-[10px] text-slate-400 font-mono leading-tight">
+            Fallback width for layers that do not set their own outline. Override it per layer below.
+          </p>
         </div>
       </div>
 
@@ -383,6 +386,32 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                   </span>
                 </div>
               )}
+            </div>
+
+            {/* Per-Layer Ink Outline Width */}
+            <div>
+              <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                <span>INK OUTLINE WIDTH</span>
+                <span className="font-semibold text-slate-800">
+                  {typeof selectedLayer.line === 'number' ? `${selectedLayer.line}px` : `${outlineWidth}px · default`}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="20"
+                value={typeof selectedLayer.line === 'number' ? selectedLayer.line : outlineWidth}
+                onChange={(e) => onUpdateLayer(selectedLayer.id!, { line: parseInt(e.target.value) || 0 })}
+                className="w-full accent-[#ff6b35] h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+              />
+              <button
+                type="button"
+                onClick={() => onUpdateLayer(selectedLayer.id!, { line: undefined })}
+                disabled={typeof selectedLayer.line !== 'number'}
+                className="mt-1 text-[10px] font-mono text-slate-500 hover:text-[#ff6b35] disabled:text-slate-300 disabled:cursor-not-allowed transition"
+              >
+                ↺ Use project default
+              </button>
             </div>
 
             {/* Slab Depth Slider */}

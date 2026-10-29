@@ -61,6 +61,7 @@ export interface StudioActions {
   setLayerGroup: (id: string, groupId: string | undefined) => void;
   addShape: (type: 'rect' | 'circle' | 'spark') => void;
   deleteLayer: (id: string) => void;
+  deleteLayers: (ids: string[]) => void;
   changePalette: (paletteId: string) => void;
   updatePaletteColor: (role: keyof Palette, hex: string) => void;
   updateOutlineWidth: (width: number) => void;
@@ -74,8 +75,13 @@ export interface StudioActions {
   beginTransform: (label?: string) => void;
   endTransform: (label?: string) => void;
   moveLayerLive: (id: string, dx: number, dy: number) => void;
+  moveLayersLive: (ids: string[], dx: number, dy: number) => void;
   rotateLayerLive: (id: string, delta: number) => void;
   scaleLayerLive: (id: string, deltaX: number, deltaY: number) => void;
+  setSelectedLayerIds: (ids: string[]) => void;
+  toggleSelectLayer: (id: string, additive?: boolean) => void;
+  selectAllLayers: () => void;
+  clearSelection: () => void;
 }
 
 export interface StudioState {
@@ -86,8 +92,13 @@ export interface StudioState {
   facing: View;
   outlineWidth: number;
   selectedLayerId: string | null;
+  selectedLayerIds: string[];
   selectedLayer: Layer | null;
   setSelectedLayerId: (id: string | null) => void;
+  setSelectedLayerIds: (ids: string[]) => void;
+  toggleSelectLayer: (id: string, additive?: boolean) => void;
+  selectAllLayers: () => void;
+  clearSelection: () => void;
   canUndo: boolean;
   canRedo: boolean;
   undo: () => void;
@@ -98,7 +109,10 @@ export interface StudioState {
 
 export function useStudioState(clock: PlaybackClock): StudioState {
   const [history, setHistory] = useState<HistoryState<StudioDoc>>(() => createHistory(defaultDoc(), 'New project'));
-  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(() => firstVisualLayer(history.present.icon));
+  const [selectedLayerIds, setSelectedLayerIds] = useState<string[]>(() => {
+    const initial = firstVisualLayer(history.present.icon);
+    return initial ? [initial] : [];
+  });
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const restoredRef = useRef(false);
 
@@ -111,6 +125,31 @@ export function useStudioState(clock: PlaybackClock): StudioState {
     docRef.current = doc;
   }, [doc]);
 
+  const selectedLayerId = selectedLayerIds[selectedLayerIds.length - 1] ?? null;
+  const selectedLayer = doc.icon.layers.find((layer) => layer.id === selectedLayerId) ?? null;
+
+  const setSelectedLayerId = useCallback((id: string | null) => {
+    setSelectedLayerIds(id ? [id] : []);
+  }, []);
+
+  const toggleSelectLayer = useCallback((id: string, additive = false) => {
+    setSelectedLayerIds((current) => {
+      if (!additive) return [id];
+      if (current.includes(id)) {
+        return current.filter((item) => item !== id);
+      }
+      return [...current, id];
+    });
+  }, []);
+
+  const selectAllLayers = useCallback(() => {
+    setSelectedLayerIds(docRef.current.icon.layers.map((layer) => layer.id || '').filter(Boolean));
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedLayerIds([]);
+  }, []);
+
   // Restore the autosaved draft after mount to keep server/client markup identical.
   useEffect(() => {
     if (restoredRef.current) return;
@@ -121,7 +160,8 @@ export function useStudioState(clock: PlaybackClock): StudioState {
     // external-store sync; reading localStorage during render would desync SSR.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistory(createHistory(draft, 'Restored draft'));
-    setSelectedLayerId(firstVisualLayer(draft.icon));
+    const initialLayer = firstVisualLayer(draft.icon);
+    setSelectedLayerIds(initialLayer ? [initialLayer] : []);
     clock.seek(0);
   }, [clock]);
 
@@ -283,7 +323,7 @@ export function useStudioState(clock: PlaybackClock): StudioState {
       },
       { label: 'Create group' }
     );
-    setSelectedLayerId(groupId);
+    setSelectedLayerIds([groupId]);
   }, [selectedLayerId, updateIcon]);
 
   const setLayerGroup = useCallback(
@@ -328,28 +368,38 @@ export function useStudioState(clock: PlaybackClock): StudioState {
         },
         { label: `Add ${type}` }
       );
-      setSelectedLayerId(layerId);
+      setSelectedLayerIds([layerId]);
     },
     [selectedLayerId, updateDoc]
   );
 
-  const deleteLayer = useCallback(
-    (id: string) => {
+  const deleteLayers = useCallback(
+    (ids: string[]) => {
+      if (!ids.length) return;
+      const idSet = new Set(ids);
       updateIcon(
         (icon) => {
-          const target = icon.layers.find((layer) => layer.id === id);
+          const targets = icon.layers.filter((layer) => layer.id && idSet.has(layer.id));
+          const groupIds = new Set(targets.filter((t) => t.isGroup && t.id).map((t) => t.id as string));
           const layers = icon.layers
-            .filter((layer) => layer.id !== id)
+            .filter((layer) => !layer.id || !idSet.has(layer.id))
             .map((layer) =>
-              target?.isGroup && layer.groupId === id ? { ...layer, groupId: undefined } : layer
+              layer.groupId && groupIds.has(layer.groupId) ? { ...layer, groupId: undefined } : layer
             );
           return { ...icon, layers };
         },
-        { label: 'Delete layer' }
+        { label: ids.length > 1 ? `Delete ${ids.length} layers` : 'Delete layer' }
       );
-      setSelectedLayerId((current) => (current === id ? null : current));
+      setSelectedLayerIds((current) => current.filter((id) => !idSet.has(id)));
     },
     [updateIcon]
+  );
+
+  const deleteLayer = useCallback(
+    (id: string) => {
+      deleteLayers([id]);
+    },
+    [deleteLayers]
   );
 
   const changePalette = useCallback(
@@ -426,7 +476,8 @@ export function useStudioState(clock: PlaybackClock): StudioState {
         },
         { label: 'Load template' }
       );
-      setSelectedLayerId(firstVisualLayer(template));
+      const initialLayer = firstVisualLayer(template);
+      setSelectedLayerIds(initialLayer ? [initialLayer] : []);
       clock.seek(0);
     },
     [clock, updateDoc]
@@ -437,7 +488,8 @@ export function useStudioState(clock: PlaybackClock): StudioState {
       const icon = cloneIcon(next.icon);
       icon.line = next.outlineWidth;
       setHistory(createHistory({ ...next, icon }, 'Open project'));
-      setSelectedLayerId(firstVisualLayer(icon));
+      const initialLayer = firstVisualLayer(icon);
+      setSelectedLayerIds(initialLayer ? [initialLayer] : []);
       clock.seek(0);
     },
     [clock]
@@ -455,7 +507,8 @@ export function useStudioState(clock: PlaybackClock): StudioState {
       outlineWidth: current.outlineWidth,
     };
     setHistory(createHistory(next, 'New project'));
-    setSelectedLayerId(firstVisualLayer(icon));
+    const initialLayer = firstVisualLayer(icon);
+    setSelectedLayerIds(initialLayer ? [initialLayer] : []);
     clock.seek(0);
   }, [clock, history.present]);
 
@@ -485,9 +538,12 @@ export function useStudioState(clock: PlaybackClock): StudioState {
     }
 
     // Newly added layers become the selection; removed ones clear it.
-    setSelectedLayerId((current) => {
-      if (current && result.removed.includes(current)) return null;
-      return result.selectedLayerId !== undefined ? result.selectedLayerId : current;
+    setSelectedLayerIds((current) => {
+      const filtered = current.filter((id) => !result.removed.includes(id));
+      if (result.selectedLayerId !== undefined) {
+        return result.selectedLayerId ? [result.selectedLayerId] : [];
+      }
+      return filtered;
     });
 
     return { applied: result.applied, skipped: result.skipped, changed: result.changed };
@@ -501,13 +557,15 @@ export function useStudioState(clock: PlaybackClock): StudioState {
     setHistory((current) => endGestureHistory(current, label));
   }, []);
 
-  const moveLayerLive = useCallback(
-    (id: string, dx: number, dy: number) => {
+  const moveLayersLive = useCallback(
+    (ids: string[], dx: number, dy: number) => {
+      if (!ids.length || (dx === 0 && dy === 0)) return;
+      const idSet = new Set(ids);
       updateIcon(
         (icon) => ({
           ...icon,
           layers: icon.layers.map((layer) => {
-            if (layer.id !== id || layer.locked) return layer;
+            if (!layer.id || !idSet.has(layer.id) || layer.locked) return layer;
             const currentP =
               Array.isArray(layer.p) && typeof layer.p[0] === 'number'
                 ? (layer.p as unknown as readonly [number, number])
@@ -519,6 +577,13 @@ export function useStudioState(clock: PlaybackClock): StudioState {
       );
     },
     [updateIcon]
+  );
+
+  const moveLayerLive = useCallback(
+    (id: string, dx: number, dy: number) => {
+      moveLayersLive([id], dx, dy);
+    },
+    [moveLayersLive]
   );
 
   const rotateLayerLive = useCallback(
@@ -584,6 +649,7 @@ export function useStudioState(clock: PlaybackClock): StudioState {
       setLayerGroup,
       addShape,
       deleteLayer,
+      deleteLayers,
       changePalette,
       updatePaletteColor,
       updateOutlineWidth,
@@ -596,8 +662,13 @@ export function useStudioState(clock: PlaybackClock): StudioState {
       beginTransform,
       endTransform,
       moveLayerLive,
+      moveLayersLive,
       rotateLayerLive,
       scaleLayerLive,
+      setSelectedLayerIds,
+      toggleSelectLayer,
+      selectAllLayers,
+      clearSelection,
     }),
     [
       addShape,
@@ -606,18 +677,24 @@ export function useStudioState(clock: PlaybackClock): StudioState {
       beginTransform,
       changeFacing,
       changePalette,
+      clearSelection,
       createGroup,
       deleteLayer,
+      deleteLayers,
       endTransform,
       loadProject,
       moveLayerIndex,
       moveLayerLive,
+      moveLayersLive,
       newProject,
       renameProject,
       rotateLayerLive,
       scaleLayerLive,
+      selectAllLayers,
       selectTemplate,
       setLayerGroup,
+      setSelectedLayerIds,
+      toggleSelectLayer,
       updateIcon,
       updateLayer,
       updateLayerTiming,
@@ -636,8 +713,13 @@ export function useStudioState(clock: PlaybackClock): StudioState {
     facing: doc.facing,
     outlineWidth: doc.outlineWidth,
     selectedLayerId,
-    selectedLayer: doc.icon.layers.find((layer) => layer.id === selectedLayerId) ?? null,
+    selectedLayerIds,
+    selectedLayer,
     setSelectedLayerId,
+    setSelectedLayerIds,
+    toggleSelectLayer,
+    selectAllLayers,
+    clearSelection,
     canUndo: historyCanUndo(history),
     canRedo: historyCanRedo(history),
     undo,

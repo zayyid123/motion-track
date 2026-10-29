@@ -43,6 +43,7 @@ const layerSchema = z.looseObject({
   r: z.unknown().optional(),
   s: z.unknown().optional(),
   o: z.unknown().optional(),
+  line: z.number().optional(),
   tilt: z.tuple([z.number(), z.number()]).optional(),
   tiltFromView: z.boolean().optional(),
   ip: z.number().optional(),

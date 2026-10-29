@@ -41,7 +41,7 @@ possible.
 | `paletteId` | string | yes | Built-in id (`slush`, `riso`, …) or `custom`. |
 | `palette` | object | yes | All ten color roles must be present when parsing v2. |
 | `facing` | `right \| left \| front \| flat` | yes | Editor view direction. |
-| `outlineWidth` | number 0–40 | yes | Global ink stroke. |
+| `outlineWidth` | number 0–40 | yes | Default ink stroke. Layers may override it with their own `line`. |
 | `savedAt` | ISO string | no | Informational only; ignored when loading. |
 
 ## Icon
@@ -85,6 +85,7 @@ interface Layer {
   r?: unknown;                 // rotation
   s?: unknown;                 // scale
   o?: unknown;                 // opacity
+  line?: number;               // per-layer outline width; overrides outlineWidth
   tilt?: [number, number];     // isometric tilt
   tiltFromView?: boolean;      // derive tilt from the editor view
   ip?: number;                 // in point (source frames)
