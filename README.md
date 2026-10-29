@@ -211,6 +211,10 @@ Target browsers are current Chrome, Edge, Safari, and Firefox. MOV export needs
 WebAssembly, Workers, and enough memory for the ffmpeg core. MP4 export is best
 in Chromium-based browsers where WebCodecs H.264 is available.
 
+## Support
+
+Full support by [repomaniac.com](https://repomaniac.com).
+
 ## License
 
 MIT — see [LICENSE](LICENSE). The sticker set, renderer and motion presets are
