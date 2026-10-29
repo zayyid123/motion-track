@@ -9,6 +9,8 @@ import {
   Film,
   Bot,
   Boxes,
+  Heart,
+  ExternalLink,
 } from 'lucide-react';
 import { draw } from '@/lib/funIsometric/fun';
 import { padlock, chat, search, coins } from '@/lib/funIsometric/icons';
@@ -21,6 +23,11 @@ const STICKER_MAP = {
   search,
   coins,
 } as const;
+
+/** Backing the project also puts your tool request on the roadmap. */
+const SAWERIA_URL = 'https://saweria.co/zayyid123';
+/** Infrastructure and ongoing support. */
+const SUPPORT_PARTNER_URL = 'https://repomaniac.com';
 
 type PreviewId = keyof typeof STICKER_MAP;
 
@@ -139,7 +146,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
               </div>
             </div>
 
-            {/* Primary CTA */}
+            {/* Primary CTA + support */}
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <button
                 onClick={onOpenStudio}
@@ -148,6 +155,31 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
                 <span>Launch Interactive Studio</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
+
+              <a
+                href={SAWERIA_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Support the project and request new tools on Saweria"
+                className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white border border-slate-300 hover:border-[#ff6b35] hover:text-[#ff6b35] text-slate-800 font-mono text-sm font-bold transition shadow-sm"
+              >
+                <Heart className="w-4 h-4" fill="currentColor" />
+                <span>Saweria</span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+              </a>
+
+              <a
+                href={SUPPORT_PARTNER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Full support by repomaniac.com"
+                className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white border border-slate-300 hover:border-slate-400 text-slate-600 font-mono text-sm font-bold transition shadow-sm"
+              >
+                <span>
+                  Support by <span className="text-[#ff6b35]">repomaniac.com</span>
+                </span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+              </a>
             </div>
           </div>
 
@@ -222,10 +254,30 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
 
       {/* Footer */}
       <footer className="max-w-6xl mx-auto px-6 py-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-slate-600 font-medium gap-4">
-        <div>
+        <div className="text-center sm:text-left">
           © 2026 motion-track. Minimalist Swiss-inspired Animated Isometric Engine.
+          <br />
+          <span className="text-slate-500">
+            Full support by{' '}
+            <a
+              href={SUPPORT_PARTNER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-slate-300 hover:text-[#ff6b35] hover:decoration-[#ff6b35] transition"
+            >
+              repomaniac.com
+            </a>
+          </span>
         </div>
         <div className="flex items-center gap-4">
+          <a
+            href={SAWERIA_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-[#ff6b35]"
+          >
+            Saweria
+          </a>
           <button onClick={onOpenStudio} className="underline hover:text-[#ff6b35]">
             Open Studio
           </button>
