@@ -141,11 +141,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
                   <button
                     key={stk.id}
                     onClick={() => setActivePreviewSticker(stk.id as 'padlock' | 'chat' | 'search' | 'coins')}
-                    className={`px-3 py-2 rounded-xl border text-xs font-mono transition flex items-center gap-1.5 ${
-                      activePreviewSticker === stk.id
+                    className={`px-3 py-2 rounded-xl border text-xs font-mono transition flex items-center gap-1.5 ${activePreviewSticker === stk.id
                         ? 'bg-orange-50 border-[#ff6b35] text-slate-950 font-bold shadow-xs'
                         : 'bg-white border-slate-300 hover:border-slate-400 text-slate-700'
-                    }`}
+                      }`}
                   >
                     <span>{stk.icon}</span>
                     <span>{stk.name}</span>
@@ -185,6 +184,18 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
                 >
                   <span>
                     Support by <span className="text-[#ff6b35]">repomaniac.com</span>
+                  </span>
+                </a>
+
+                <a
+                  href="https://github.com/kelvinkn17/skills"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Skills"
+                  className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border border-slate-300 hover:border-slate-400 text-slate-600 font-mono text-xs font-bold transition shadow-sm"
+                >
+                  <span>
+                    Skills By <span className="text-[#ff6b35]">kelvinkn17</span>
                   </span>
                 </a>
 
