@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import {
   Sparkles,
   ArrowRight,
@@ -64,9 +65,15 @@ export const LandingView: React.FC<LandingViewProps> = ({ onOpenStudio }) => {
       {/* Navigation Header */}
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between border-b border-slate-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-30">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-[#ff6b35] text-white flex items-center justify-center font-mono font-bold text-xs sm:text-sm shadow-sm shadow-orange-200">
-            MT
-          </div>
+          <Image
+            src="/logo.svg"
+            alt="motion-track logo"
+            width={36}
+            height={36}
+            unoptimized
+            priority
+            className="w-8 h-8 sm:w-9 sm:h-9 shrink-0"
+          />
           <span className="font-mono font-bold text-base sm:text-lg tracking-tight text-slate-900">
             motion-track
           </span>

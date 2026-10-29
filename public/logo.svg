@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-labelledby="motionTrackLogo">
+  <title id="motionTrackLogo">motion-track — isometric animated sticker studio</title>
+  <defs>
+    <linearGradient id="mtTopFace" x1="11" y1="12" x2="37" y2="27" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffc247"/>
+      <stop offset="1" stop-color="#ff9050"/>
+    </linearGradient>
+    <linearGradient id="mtRightFace" x1="26" y1="20" x2="38" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff6b35"/>
+      <stop offset="1" stop-color="#ef5a22"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(24 24) scale(1.2) translate(-24 -20.7)">
+    <!-- motion track: dashed orbit with a playhead marker -->
+    <path d="M10.63 18.12A13.5 13.5 0 0 1 35.92 13.66" fill="none" stroke="#0f172a"
+          stroke-width="2.2" stroke-linecap="round" stroke-dasharray="0.1 5.4" opacity="0.85"/>
+    <circle cx="35.92" cy="13.66" r="2.9" fill="#ffb703"/>
+
+    <!-- isometric slab sticker -->
+    <path d="M24 13 38 20 24 27 10 20Z" fill="url(#mtTopFace)"/>
+    <path d="M38 20 24 27v9l14-7Z" fill="url(#mtRightFace)"/>
+    <path d="M10 20 24 27v9l-14-7Z" fill="#d54b1e"/>
+    <path d="M21.4 16.6v6.8L28.3 20Z" fill="#ffffff"/>
+  </g>
+</svg>

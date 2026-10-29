@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Play,
   Pause,
@@ -108,9 +109,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             className="flex items-center gap-1.5 sm:gap-2 pr-1.5 sm:pr-3 border-r border-slate-200 hover:opacity-80 transition cursor-pointer"
             title="Back to Landing Page"
           >
-            <div className="w-8 h-8 rounded-xl bg-[#ff6b35] text-white flex items-center justify-center font-mono font-bold text-xs sm:text-sm shadow-sm shadow-orange-200 shrink-0">
-              MT
-            </div>
+            <Image
+              src="/logo.svg"
+              alt="motion-track logo"
+              width={32}
+              height={32}
+              unoptimized
+              className="w-8 h-8 shrink-0"
+            />
             <span className="font-mono font-bold tracking-tight text-slate-900 hidden sm:inline">
               motion-track
             </span>

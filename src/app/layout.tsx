@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,11 @@ export const metadata: Metadata = {
   description: "Minimalist Swiss-inspired design studio for creating animated isometric slab stickers with role-based palettes, After Effects keyframe motions, custom AI chat, and video exports.",
 };
 
+// Google Analytics 4 (gtag.js). Set NEXT_PUBLIC_GA_ID in .env.local to enable;
+// when the variable is empty the tag is not rendered at all and the app runs
+// without any third-party request. See README › Analytics.
+const gaId = process.env.NEXT_PUBLIC_GA_ID?.trim();
+
 export default function RootLayout({
   children,
 }: {
@@ -33,6 +39,7 @@ export default function RootLayout({
           fix and does not hide real mismatches in children. */}
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
+        {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
       </body>
     </html>
   );
