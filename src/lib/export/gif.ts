@@ -1,7 +1,8 @@
 import gifshot from 'gifshot';
 import type { Icon, Palette } from '@/lib/funIsometric/fun';
-import { planFrames } from './frames';
+import { planLoop } from './frames';
 import { renderFrameToCanvas } from './render';
+import { repeatIcon } from './repeat';
 import { assertNotCancelled, ExportCancelledError } from './types';
 import type { ExportResult, ProgressFn } from './types';
 
@@ -19,13 +20,15 @@ export async function exportGIF(
   speed: number = 1
 ): Promise<ExportResult> {
   const solidBg = background ?? '#ffffff';
-  const frames = planFrames(icon.frames || 180, fps, speed);
+  const plan = planLoop(icon.frames || 180, fps, speed);
+  const loopIcon = repeatIcon(icon, plan.cycleCount);
+  const frames = plan.frames;
   const canvases: HTMLCanvasElement[] = [];
 
   for (let index = 0; index < frames.length; index += 1) {
     assertNotCancelled(signal);
     canvases.push(
-      renderFrameToCanvas(icon, palette, frames[index], {
+      renderFrameToCanvas(loopIcon, palette, frames[index], {
         width,
         height,
         background: solidBg,

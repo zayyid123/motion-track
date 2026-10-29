@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planFrames, formatDuration, loopDurationSeconds } from './frames';
+import { MIN_EXPORT_SECONDS, planFrames, planLoop, formatDuration, loopDurationSeconds } from './frames';
 
 describe('planFrames', () => {
   it('exports the full loop at 30 fps without duplicating the boundary frame', () => {
@@ -62,5 +62,52 @@ describe('duration helpers', () => {
     expect(formatDuration(180, 2)).toBe('1.50s');
     expect(loopDurationSeconds(180, 0.5)).toBeCloseTo(6.0, 3);
     expect(formatDuration(180, 0.5)).toBe('6.00s');
+  });
+});
+
+describe('planLoop minimum duration', () => {
+  it('repeats short cycles until the clip lasts at least 6 seconds', () => {
+    // A 123-frame design is ~2.05s per cycle, so three cycles clear 6s.
+    const plan = planLoop(123, 30);
+    expect(plan.totalSeconds).toBeGreaterThanOrEqual(MIN_EXPORT_SECONDS);
+    expect(plan.cycleCount).toBe(3);
+    expect(plan.totalFrames).toBe(123 * 3);
+  });
+
+  it('uses two cycles for a 3 second design', () => {
+    const plan = planLoop(180, 30);
+    expect(plan.cycleCount).toBe(2);
+    expect(plan.totalSeconds).toBeGreaterThanOrEqual(MIN_EXPORT_SECONDS);
+  });
+
+  it('never repeats a clip that is already long enough', () => {
+    // 360 frames at 1x is exactly 6 seconds.
+    const plan = planLoop(360, 30);
+    expect(plan.cycleCount).toBe(1);
+    expect(plan.totalFrames).toBe(360);
+    expect(plan.totalSeconds).toBeCloseTo(6, 5);
+  });
+
+  it('honours the speed multiplier when sizing cycles', () => {
+    // 180 frames at 0.5x is 6s per cycle, so a single cycle is enough.
+    const slow = planLoop(180, 30, 0.5);
+    expect(slow.cycleCount).toBe(1);
+    // 180 frames at 2x is 1.5s per cycle, so four cycles are needed.
+    const fast = planLoop(180, 30, 2);
+    expect(fast.cycleCount).toBe(4);
+    expect(fast.totalSeconds).toBeGreaterThanOrEqual(MIN_EXPORT_SECONDS);
+  });
+
+  it('never references a frame outside the repeated clip', () => {
+    for (const total of [1, 7, 123, 180, 360]) {
+      for (const fps of [24, 30, 60]) {
+        const plan = planLoop(total, fps);
+        expect(plan.frames.length).toBeGreaterThan(0);
+        for (const frame of plan.frames) {
+          expect(frame).toBeGreaterThanOrEqual(0);
+          expect(frame).toBeLessThan(plan.totalFrames);
+        }
+      }
+    }
   });
 });

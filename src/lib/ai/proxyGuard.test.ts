@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_ALLOWED_HOSTS,
   assertSafeEndpoint,
+  describeFetchFailure,
   isBlockedHostname,
   isHostAllowed,
   isPrivateAddress,
@@ -132,5 +133,47 @@ describe('assertSafeEndpoint', () => {
 
   it('rejects malformed URLs', () => {
     expect(() => assertSafeEndpoint('not a url', allowlist)).toThrow(/valid URL/);
+  });
+});
+
+describe('describeFetchFailure', () => {
+  const url = new URL('https://api.example.com/v1/chat/completions');
+
+  const failure = (code: string) => Object.assign(new TypeError('fetch failed'), { cause: { code } });
+
+  it('names a refused connection on a loopback endpoint as a local gateway problem', () => {
+    const local = new URL('http://localhost:1234/v1/chat/completions');
+    expect(describeFetchFailure(failure('ECONNREFUSED'), local)).toMatch(/nothing is listening at the configured address/);
+  });
+
+  it('names a refused connection on a remote endpoint generically', () => {
+    expect(describeFetchFailure(failure('ECONNREFUSED'), url)).toMatch(/connection was refused/);
+  });
+
+  it('names DNS and timeout failures', () => {
+    expect(describeFetchFailure(failure('ENOTFOUND'), url)).toMatch(/could not be resolved/);
+    expect(describeFetchFailure(failure('EAI_AGAIN'), url)).toMatch(/could not be resolved/);
+    expect(describeFetchFailure(failure('ETIMEDOUT'), url)).toMatch(/timed out/);
+    expect(describeFetchFailure(failure('UND_ERR_CONNECT_TIMEOUT'), url)).toMatch(/timed out/);
+  });
+
+  it('names TLS certificate failures', () => {
+    expect(describeFetchFailure(failure('CERT_HAS_EXPIRED'), url)).toMatch(/certificate was rejected/);
+  });
+
+  it('falls back to the underlying message for unknown causes', () => {
+    const err = Object.assign(new TypeError('fetch failed'), { cause: { code: 'EAI_AGAIN' } });
+    const out = describeFetchFailure(err, url);
+    expect(out).toMatch(/^Failed to reach the AI provider/);
+  });
+
+  it('never leaks an API key from the underlying message', () => {
+    const err = Object.assign(new TypeError('fetch failed'), {
+      cause: { code: 'EHOSTUNREACH' },
+      message: 'sk-abcdefghijklmnop rejected',
+    });
+    const out = describeFetchFailure(err, url);
+    expect(out).not.toContain('sk-abcdefghijklmnop');
+    expect(out).toContain('sk-***');
   });
 });

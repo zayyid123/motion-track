@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   assertPublicResolution,
   assertSafeEndpoint,
+  describeFetchFailure,
   parseAllowlist,
   ProxyGuardError,
 } from '@/lib/ai/proxyGuard';
@@ -201,7 +202,7 @@ export async function POST(req: NextRequest) {
     const message = error instanceof Error ? error.message : 'Unknown relay error';
     // Never log request headers or the API key.
     console.error('[ai-proxy] upstream request failed:', sanitize(message));
-    return jsonError('Failed to reach the AI provider.', 502);
+    return jsonError(describeFetchFailure(error, url), 502);
   } finally {
     if (timer) clearTimeout(timer);
     req.signal.removeEventListener('abort', onClientAbort);

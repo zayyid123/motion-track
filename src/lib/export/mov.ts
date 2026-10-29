@@ -1,7 +1,8 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
 import type { Icon, Palette } from '@/lib/funIsometric/fun';
-import { planFrames } from './frames';
+import { planLoop } from './frames';
 import { renderFrameToCanvas } from './render';
+import { repeatIcon } from './repeat';
 import { assertNotCancelled, ExportCancelledError } from './types';
 import type { ExportResult, ProgressFn } from './types';
 
@@ -78,7 +79,9 @@ export async function exportMOV(
 ): Promise<ExportResult> {
   assertNotCancelled(signal);
   const ffmpeg = await getFFmpeg(onProgress);
-  const frames = planFrames(icon.frames || 180, fps, speed);
+  const plan = planLoop(icon.frames || 180, fps, speed);
+  const loopIcon = repeatIcon(icon, plan.cycleCount);
+  const frames = plan.frames;
   const inputPattern = 'frame%05d.png';
   const output = 'motion-track.mov';
   const files = frames.map((_, index) => `frame${String(index + 1).padStart(5, '0')}.png`);
@@ -100,7 +103,7 @@ export async function exportMOV(
     // Render a PNG sequence (RGBA) for ffmpeg.
     for (let index = 0; index < frames.length; index += 1) {
       assertNotCancelled(signal);
-      const canvas = renderFrameToCanvas(icon, palette, frames[index], {
+      const canvas = renderFrameToCanvas(loopIcon, palette, frames[index], {
         width,
         height,
         background,
