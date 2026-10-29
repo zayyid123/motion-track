@@ -19,7 +19,7 @@ import { ellipse, ensureLayerIds, PALETTES, rect, spark, VIEWS } from '@/lib/fun
 import type { Icon, Layer, Palette, View } from '@/lib/funIsometric/fun';
 import { findShape, shapeLayer } from '@/lib/funIsometric/shapes';
 import { blankProject, padlock } from '@/lib/funIsometric/icons';
-import { createMotion } from '@/lib/funIsometric/presets';
+import { createMotion, annotatePresets } from '@/lib/funIsometric/presets';
 import {
   DEFAULT_FACING,
   DEFAULT_OUTLINE,
@@ -34,7 +34,15 @@ import type { StudioDoc } from '@/lib/projectFile';
  * the per-layer controls (hide, lock, delete, reorder) work on every design,
  * including the vendored stickers that omit ids on decorative layers.
  */
-const cloneIcon = (icon: Icon): Icon => ensureLayerIds(JSON.parse(JSON.stringify(icon)) as Icon);
+/**
+ * Brings a loaded or pasted icon up to the studio's expectations: every layer
+ * gets a stable id, and a layer whose hand-written track matches a known motion
+ * preset is tagged with that preset so the sidebar and timeline can name it.
+ * Older projects saved before presets were tagged are migrated here.
+ */
+const normalizeIcon = (icon: Icon): Icon => annotatePresets(ensureLayerIds(icon));
+
+const cloneIcon = (icon: Icon): Icon => normalizeIcon(JSON.parse(JSON.stringify(icon)) as Icon);
 
 const defaultDoc = (): StudioDoc => ({
   icon: cloneIcon(padlock),
@@ -164,7 +172,7 @@ export function useStudioState(clock: PlaybackClock): StudioState {
     if (!draft) return;
     // Restoring the autosaved draft after hydration is a deliberate one-time
     // external-store sync; reading localStorage during render would desync SSR.
-    const restored = { ...draft, icon: ensureLayerIds(draft.icon) };
+    const restored = { ...draft, icon: normalizeIcon(draft.icon) };
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistory(createHistory(restored, 'Restored draft'));
     const initialLayer = firstVisualLayer(restored.icon);
@@ -276,7 +284,6 @@ export function useStudioState(clock: PlaybackClock): StudioState {
 
           if (targetGroupId !== undefined && !moved.isGroup) {
             moved.groupId = targetGroupId || undefined;
-            if (!targetGroupId) moved.parent = undefined;
           }
 
           layers.splice(toIndex, 0, moved);
@@ -339,9 +346,7 @@ export function useStudioState(clock: PlaybackClock): StudioState {
         (icon) => ({
           ...icon,
           layers: icon.layers.map((layer) =>
-            layer.id === id
-              ? { ...layer, groupId, parent: groupId ? layer.parent : undefined }
-              : layer
+            layer.id === id ? { ...layer, groupId } : layer
           ),
         }),
         { label: groupId ? 'Add layer to group' : 'Remove layer from group' }

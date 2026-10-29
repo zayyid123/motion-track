@@ -57,7 +57,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
           </div>
           {selectedLayer && (
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-orange-100 text-[#ff6b35] font-semibold">
-              {currentLayerMotion}
+              {currentLayerMotion === 'none' ? 'no motion' : currentLayerMotion === 'custom' ? 'custom track' : currentLayerMotion}
             </span>
           )}
         </div>
@@ -358,7 +358,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                     </button>
                   </div>
                   <span className="text-[10px] text-slate-500 block leading-tight">
-                    ↳ Layer is inside group and automatically inherits motion from its parent group container.
+                    ↳ Layer is inside a group and automatically inherits the group container&apos;s motion.
                   </span>
                 </div>
               ) : (

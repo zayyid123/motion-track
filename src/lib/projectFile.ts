@@ -36,7 +36,6 @@ const layerSchema = z.looseObject({
   groupId: z.string().optional(),
   isGroupLeader: z.boolean().optional(),
   motionPreset: z.string().optional(),
-  parent: z.string().optional(),
   clip: z.string().optional(),
   a: z.tuple([z.number(), z.number()]).optional(),
   p: z.unknown().optional(),

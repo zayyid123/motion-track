@@ -437,7 +437,7 @@ export function centerComposition(icon: Icon): Icon {
   return {
     ...icon,
     layers: icon.layers.map((layer) => {
-      if (layer.parent || layer.groupId) return layer;
+      if (layer.groupId) return layer;
       const p = layer.p;
       if (!Array.isArray(p) || typeof p[0] !== 'number' || typeof p[1] !== 'number') return layer;
       return { ...layer, p: [round(p[0] + dx), round(p[1] + dy)] };
@@ -471,7 +471,7 @@ export function fitComposition(icon: Icon, maxSize = 380): Icon {
   return {
     ...icon,
     layers: icon.layers.map((layer) => {
-      if (layer.parent || layer.groupId) return layer;
+      if (layer.groupId) return layer;
       const p = layer.p;
       if (!Array.isArray(p) || typeof p[0] !== 'number' || typeof p[1] !== 'number') return layer;
       const s = staticScale(layer);
