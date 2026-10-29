@@ -1,4 +1,9 @@
 <div align="center">
+  <img src="public/logo.svg" alt="Motion-Track logo — isometric orange sticker slab on a dashed motion track" width="88" height="88">
+  <h1>Motion-Track</h1>
+</div>
+
+<div align="center">
   <img src="docs/images/hero.png" alt="Motion-Track — animated isometric stickers" width="100%">
 </div>
 
@@ -138,6 +143,32 @@ AI_PROXY_ALLOWED_HOSTS=""
 
 By default, all AI model endpoints (including remote providers and local/custom
 AI gateways) are allowed. See [docs/AI-RELAY.md](docs/AI-RELAY.md).
+
+### Analytics (GA4)
+
+Google Analytics 4 is wired through
+[`@next/third-parties`](https://nextjs.org/docs/app/building-your-application/optimizing/third-party-libraries#google-analytics)
+and is **off by default**. Add your measurement ID and the `gtag.js` tag is
+injected on every route; leave the variable empty and no third-party script is
+ever loaded.
+
+```bash
+# .env.local
+NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
+```
+
+Because the value is inlined at build time, restart (or rebuild) the dev server
+after changing it. The tag is rendered from `src/app/layout.tsx`, so App Router
+client-side navigations between `/` and `/dashboard` are reported as page views
+automatically.
+
+## Brand assets
+
+| File | Use |
+| --- | --- |
+| `public/logo.svg` | Primary logo mark (header, docs, press). |
+| `src/app/icon.svg` | Favicon, served automatically by Next.js. |
+| `src/app/apple-icon.png` | 180×180 Apple touch icon. |
 
 ## Project structure
 
