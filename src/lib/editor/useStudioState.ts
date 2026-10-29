@@ -17,6 +17,7 @@ import { applyAIActionsToDoc } from '@/lib/ai/actions';
 import type { AIAction, AIApplyOutcome } from '@/lib/ai/actions';
 import { ellipse, ensureLayerIds, PALETTES, rect, spark, VIEWS } from '@/lib/funIsometric/fun';
 import type { Icon, Layer, Palette, View } from '@/lib/funIsometric/fun';
+import { findShape, shapeLayer } from '@/lib/funIsometric/shapes';
 import { blankProject, padlock } from '@/lib/funIsometric/icons';
 import { createMotion } from '@/lib/funIsometric/presets';
 import {
@@ -64,7 +65,7 @@ export interface StudioActions {
   applyMotion: (id: string, preset: string) => void;
   createGroup: () => void;
   setLayerGroup: (id: string, groupId: string | undefined) => void;
-  addShape: (type: 'rect' | 'circle' | 'spark') => void;
+  addShape: (shapeId: string) => void;
   deleteLayer: (id: string) => void;
   deleteLayers: (ids: string[]) => void;
   changePalette: (paletteId: string) => void;
@@ -350,29 +351,50 @@ export function useStudioState(clock: PlaybackClock): StudioState {
   );
 
   const addShape = useCallback(
-    (type: 'rect' | 'circle' | 'spark') => {
+    (shapeId: string) => {
+      const def = findShape(shapeId);
       const layerId = nextId('layer');
       updateDoc(
         (current) => {
-          const shape =
-            type === 'circle' ? ellipse(0, 0, 50, 40) : type === 'spark' ? spark(0, 0, 32) : rect(-50, -50, 100, 100, 12);
           const selected = current.icon.layers.find((layer) => layer.id === selectedLayerId);
           const groupId = selected?.groupId;
 
-          const layer: Layer = {
-            id: layerId,
-            name: `New ${type}`,
-            p: [250, 250],
-            tilt: VIEWS[current.facing].tilt,
-            tiltFromView: true,
-            groupId,
-            isGroupLeader: false,
-            shapes: [{ d: shape, fill: 'main', depth: type === 'spark' ? 0 : 0.8 }],
-          };
+          // A known catalogue shape reuses the exact layer the picker previews;
+          // unknown ids fall back to the legacy primitives so nothing breaks.
+          const layer: Layer = def
+            ? {
+                ...shapeLayer(layerId, def.label, def, {
+                  tilt: VIEWS[current.facing].tilt,
+                  fill: 'main',
+                  at: [250, 250],
+                }),
+                groupId,
+              }
+            : {
+                id: layerId,
+                name: shapeId,
+                p: [250, 250],
+                tilt: VIEWS[current.facing].tilt,
+                tiltFromView: true,
+                groupId,
+                isGroupLeader: false,
+                shapes: [
+                  {
+                    d:
+                      shapeId === 'circle'
+                        ? ellipse(0, 0, 50, 40)
+                        : shapeId === 'spark'
+                          ? spark(0, 0, 32)
+                          : rect(-50, -50, 100, 100, 12),
+                    fill: 'main',
+                    depth: shapeId === 'spark' ? 0 : 0.8,
+                  },
+                ],
+              };
 
           return { ...current, icon: { ...current.icon, layers: [...current.icon.layers, layer] } };
         },
-        { label: `Add ${type}` }
+        { label: `Add ${def?.label ?? shapeId}` }
       );
       setSelectedLayerIds([layerId]);
     },
