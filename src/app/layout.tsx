@@ -17,7 +17,11 @@ export const metadata: Metadata = {
   description: "Minimalist Swiss-inspired design studio for creating animated isometric slab stickers with role-based palettes, After Effects keyframe motions, custom AI chat, and video exports.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"
