@@ -213,6 +213,7 @@ export function MotionTrackStudio() {
             }}
             onUpdateFacing={actions.changeFacing}
             currentFacing={studio.facing}
+            paletteId={studio.paletteId}
             onAddShape={(shape) => {
               actions.addShape(shape);
               setMobileTab('canvas');

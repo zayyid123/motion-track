@@ -18,7 +18,7 @@ import {
   Gauge,
   Check,
 } from 'lucide-react';
-import { Layer } from '@/lib/funIsometric';
+import { type Layer } from '@/lib/funIsometric';
 import type { PlaybackClock } from '@/lib/editor/clock';
 import { useClockLoop, useIsPlaying, usePlaybackFrame, usePlaybackSpeed } from '@/hooks/usePlayback';
 
@@ -635,11 +635,11 @@ export const Timeline: React.FC<MultiTrackTimelineProps> = ({
                             {layer.name || layerId}
                           </div>
                           <div className="text-[9px] text-slate-400 font-normal truncate flex items-center gap-1">
-                            <span>{layer.motionPreset ? `motion: ${layer.motionPreset}` : 'static'}</span>
+                            <span>{layer.motionPreset ? `motion: ${layer.motionPreset}` : layer.m ? 'motion: custom' : 'no motion'}</span>
                             {isGroupContainer ? (
                               <span className="text-orange-600 font-semibold truncate">• (Empty Container)</span>
                             ) : inGroup ? (
-                              <span className="text-blue-500 font-medium truncate">• ↳ {layer.groupId}</span>
+                              <span className="text-blue-500 font-medium truncate">• ↳ in {layer.groupId}</span>
                             ) : null}
                           </div>
                         </div>

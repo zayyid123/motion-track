@@ -7,6 +7,7 @@
 // primitives, so the AI inserts them by name and users can start from them.
 import { VIEWS, arc, ellipse, line, onFace, pill, poly, rect, ring, spark, star, view } from './fun'
 import { EASY, SNAP, bob, bounce, clasp, deal, drift, erase, fall, flicker, float, glint, hop, impact, jolt, latch, look, press, shackle, slide, sparkle, springTurn, sway, toss, tossLag, tossLag2, twinkle, twist, wiggle, wobble } from './motions'
+import { annotatePresets } from './presets'
 import type { Icon, Layer, Motion, Shape, Track, Vec } from './fun'
 
 // colours are palette slots, so draw(..., palette) or play(..., { palette }) recolours the whole set
@@ -14,9 +15,9 @@ const LINE = 5
 // the house view: faces turned 18 degrees in their plane and leaned back 36, sides falling down left
 const { tilt: FACE, extrude: EXT } = VIEWS.right
 
-// a white sparkle riding a parent, popped by whatever motion it is given
-const glow = (parent: string, p: Vec, r: number, m: Motion | ReadonlyArray<Motion>, extra: { ip?: number; op?: number } = {}): Layer => ({
-  parent,
+// a white sparkle riding a group container, popped by whatever motion it is given
+const glow = (groupId: string, p: Vec, r: number, m: Motion | ReadonlyArray<Motion>, extra: { ip?: number; op?: number } = {}): Layer => ({
+  groupId,
   a: p,
   p,
   m,
@@ -34,23 +35,17 @@ export const folder: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { parent: 'body', shapes: [{ d: poly([[-130, -100], [-56, -100], [-34, -76], [130, -76], [130, 92], [-130, 92]], [18, 8, 8, 18, 18, 18]), fill: 'main', depth: 1 }] },
+    { id: 'body-grp', name: 'Folder Body Group', isGroup: true, a: [-130, 20], p: [126, 294], tilt: FACE, m: toss, shapes: [] },
+    { groupId: 'body-grp', shapes: [{ d: poly([[-130, -100], [-56, -100], [-34, -76], [130, -76], [130, 92], [-130, 92]], [18, 8, 8, 18, 18, 18]), fill: 'main', depth: 1 }] },
     {
-      parent: 'body',
+      groupId: 'body-grp',
       a: [-108, 50],
       p: [-108, 50],
       m: tossLag2,
       shapes: [{ d: rect(-104, -136, 206, 192, 12), fill: 'white', depth: 0.3 }, { d: line([-78, -118], [8, -118]) }],
     },
-    { parent: 'body', a: [-116, 52], p: [-116, 52], m: tossLag, shapes: [{ d: rect(-116, -104, 226, 164, 12), fill: 'ok', depth: 0.3 }] },
-    {
-      id: 'body',
-      a: [-130, 20],
-      p: [126, 294],
-      tilt: FACE,
-      m: toss,
-      shapes: [{ d: rect(-130, -46, 260, 138, 18), fill: 'deep', depth: 1 }, { d: pill(-46, -12, 92, 28), fill: 'white', depth: 0.3 }],
-    },
+    { groupId: 'body-grp', a: [-116, 52], p: [-116, 52], m: tossLag, shapes: [{ d: rect(-116, -104, 226, 164, 12), fill: 'ok', depth: 0.3 }] },
+    { id: 'body', name: 'Folder Front', groupId: 'body-grp', p: [0, 0], shapes: [{ d: rect(-130, -46, 260, 138, 18), fill: 'deep', depth: 1 }, { d: pill(-46, -12, 92, 28), fill: 'white', depth: 0.3 }] },
   ],
 }
 
@@ -62,8 +57,8 @@ export const heart: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'heart', p: [250, 262], m: hop, shapes: [] },
-    { parent: 'heart', tilt: [-14, 30], shapes: [{ d: HEART, fill: 'hot', depth: 1, edges: [[0, 92]] }, { d: inset(HEART, 0.7, [0, -22]) }] },
+    { id: 'heart', name: 'Heart Group', isGroup: true, p: [250, 262], m: hop, shapes: [] },
+    { groupId: 'heart', tilt: [-14, 30], shapes: [{ d: HEART, fill: 'hot', depth: 1, edges: [[0, 92]] }, { d: inset(HEART, 0.7, [0, -22]) }] },
     glow('heart', [128, -112], 30, twinkle(0, true), { op: 30 }),
     glow('heart', [128, -112], 30, twinkle(48), { ip: 48 }),
     glow('heart', [-150, 10], 18, twinkle(4, true), { op: 34 }),
@@ -81,17 +76,12 @@ export const coins: Icon = {
   layers: [
     { p: [252, 352], r: -10, shapes: [{ d: COIN(0, 0), fill: 'gold', depth: 1 }] },
     { p: [246, 318], r: -10, shapes: [{ d: COIN(0, 0), fill: 'gold', depth: 1 }] },
-    {
-      id: 'coin',
-      p: [240, 278],
-      r: -10,
-      m: bounce,
-      shapes: [{ d: COIN(0, 0), fill: 'gold', depth: 1 }, { d: ellipse(0, 0, 86, 58) }, { d: star(0, 2, 40, 0.46, 5, 4), fill: 'ink', line: false }],
-    },
-    glow('coin', [96, -66], 26, glint(2, 98)),
-    glow('coin', [-104, -48], 26, glint(6, 122)),
-    glow('coin', [-26, 70], 22, glint(12, 107)),
-    glow('coin', [92, -70], 28, glint(65, 125)),
+    { id: 'coin-grp', name: 'Coins Stack Group', isGroup: true, p: [240, 278], r: -10, m: bounce, shapes: [] },
+    { id: 'coin', name: 'Top Coin', groupId: 'coin-grp', p: [0, 0], shapes: [{ d: COIN(0, 0), fill: 'gold', depth: 1 }, { d: ellipse(0, 0, 86, 58) }, { d: star(0, 2, 40, 0.46, 5, 4), fill: 'ink', line: false }] },
+    glow('coin-grp', [96, -66], 26, glint(2, 98)),
+    glow('coin-grp', [-104, -48], 26, glint(6, 122)),
+    glow('coin-grp', [-26, 70], 22, glint(12, 107)),
+    glow('coin-grp', [92, -70], 28, glint(65, 125)),
   ],
 }
 
@@ -105,19 +95,13 @@ export const bell: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { parent: 'bell', a: [0, 80], p: [0, 80], m: { ...wiggle, at: 6, k: 0.8 }, shapes: [{ d: ellipse(0, 112, 24), fill: 'hot', depth: 0.8 }] },
-    {
-      id: 'bell',
-      a: [0, -112],
-      p: [250, 136],
-      r: -8,
-      m: wiggle,
-      shapes: [
+    { id: 'bell-grp', name: 'Bell Group', isGroup: true, a: [0, -112], p: [250, 136], r: -8, m: wiggle, shapes: [] },
+    { groupId: 'bell-grp', a: [0, 80], p: [0, 80], m: { ...wiggle, at: 6, k: 0.8 }, shapes: [{ d: ellipse(0, 112, 24), fill: 'hot', depth: 0.8 }] },
+    { id: 'bell', name: 'Bell Dome', groupId: 'bell-grp', p: [0, 0], shapes: [
         { d: ring(0, -116, 22, 9), fill: 'gold', depth: 0.6 },
         { d: BELL, fill: 'gold', depth: 1 },
         { d: LIP, fill: 'gold', depth: 1 },
-      ],
-    },
+      ] },
   ],
 }
 
@@ -129,9 +113,9 @@ export const calendar: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'cal', p: [244, 262], m: jolt(), shapes: [] },
+    { id: 'cal', name: 'Calendar Group', isGroup: true, p: [244, 262], m: jolt(), shapes: [] },
     {
-      parent: 'cal',
+      groupId: 'cal',
       tilt: FACE,
       shapes: [
         { d: rect(-122, -104, 244, 214, 26), fill: 'white', depth: 1 },
@@ -141,7 +125,7 @@ export const calendar: Icon = {
       ],
     },
     {
-      parent: 'cal',
+      groupId: 'cal',
       a: BADGE,
       p: BADGE,
       m: [twinkle(14), twinkle(100, true)],
@@ -162,18 +146,14 @@ export const padlock: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'lock', p: [256, 300], m: clasp, shapes: [] },
-    { parent: 'body', a: [-58, -62], p: [-58, -62], m: shackle, shapes: [{ d: SHACKLE, fill: 'grey', depth: 0.7 }] },
-    {
-      id: 'body',
-      parent: 'lock',
-      tilt: FACE,
-      shapes: [
+    { id: 'lock', name: 'Padlock Group', isGroup: true, p: [256, 300], m: clasp, shapes: [] },
+    { id: 'body-grp', name: 'Padlock Body Group', groupId: 'lock', isGroup: true, p: [0, 0], tilt: FACE, shapes: [] },
+    { groupId: 'body-grp', a: [-58, -62], p: [-58, -62], m: shackle, shapes: [{ d: SHACKLE, fill: 'grey', depth: 0.7 }] },
+    { id: 'body', name: 'Padlock Body', groupId: 'body-grp', p: [0, 0], shapes: [
         { d: rect(-112, -80, 224, 176, 24), fill: 'ok', depth: 1 },
         { d: ellipse(0, 8, 36, 50), fill: 'white', depth: 0.25 },
         { d: KEYHOLE, fill: 'ink', line: false },
-      ],
-    },
+      ] },
     glow('lock', [-142, -70], 30, twinkle(0, true), { op: 30 }),
     glow('lock', [-142, -70], 30, twinkle(75), { ip: 75 }),
   ],
@@ -187,16 +167,18 @@ export const gift: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'box', p: [250, 306], m: impact([3, 12]), shapes: [] },
+    { id: 'box', name: 'Gift Box Group', isGroup: true, p: [250, 306], m: impact([3, 12]), shapes: [] },
+    { id: 'crate-grp', name: 'Gift Crate Group', groupId: 'box', isGroup: true, p: [0, 0], tilt: FACE, shapes: [] },
     {
       id: 'crate',
-      parent: 'box',
-      tilt: FACE,
+      name: 'Gift Crate',
+      groupId: 'crate-grp',
+      p: [0, 0],
       // the ribbon carries its own depth, so it wraps down the side
       shapes: [{ d: rect(-112, -40, 224, 136, 16), fill: 'tint', depth: 1 }, { d: rect(-22, -40, 44, 136), fill: 'gold', depth: 1 }],
     },
     {
-      parent: 'crate',
+      groupId: 'crate-grp',
       p: [0, -44],
       m: latch([0, 44]),
       shapes: [
@@ -243,9 +225,9 @@ export const search: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'lens', p: [222, 226], m: twist, shapes: [] },
+    { id: 'lens', name: 'Search Lens Group', isGroup: true, p: [222, 226], m: twist, shapes: [] },
     {
-      parent: 'lens',
+      groupId: 'lens',
       tilt: [-20, 28],
       shapes: [
         { d: poly([[54, 90], [90, 54], [178, 142], [142, 178]], [0, 0, 24, 24]), fill: 'hot', depth: 1 },
@@ -271,11 +253,13 @@ export const chat: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'bot', a: ROCK, p: [252 + ROCK[0], 216 + ROCK[1]], m: wobble, shapes: [] },
+    { id: 'bot', name: 'Chat Bot Group', isGroup: true, a: ROCK, p: [252 + ROCK[0], 216 + ROCK[1]], m: wobble, shapes: [] },
+    { id: 'face-grp', name: 'Chat Face Group', groupId: 'bot', isGroup: true, p: [0, 0], tilt: BOT, shapes: [] },
     {
       id: 'face',
-      parent: 'bot',
-      tilt: BOT,
+      name: 'Chat Face',
+      groupId: 'face-grp',
+      p: [0, 0],
       shapes: [
         { d: pill(-8, -150, 16, 60), fill: 'grey', depth: 0.5 },
         { d: ellipse(0, -152, 20), fill: 'gold', depth: 0.6 },
@@ -284,10 +268,10 @@ export const chat: Icon = {
         { d: arc(0, 4, 30, 25, 155) },
       ],
     },
-    { id: 'eyeL', parent: 'face', shapes: [{ d: ellipse(-46, -20, 26, 30), fill: 'white' }] },
-    { id: 'eyeR', parent: 'face', shapes: [{ d: ellipse(46, -20, 26, 30), fill: 'white' }] },
-    { parent: 'face', clip: 'eyeL', m: { ...look, k: 1.6 }, shapes: [{ d: ellipse(-40, -14, 15), fill: 'ink', line: false }] },
-    { parent: 'face', clip: 'eyeR', m: { ...look, k: 1.6 }, shapes: [{ d: ellipse(52, -14, 15), fill: 'ink', line: false }] },
+    { id: 'eyeL', groupId: 'face-grp', shapes: [{ d: ellipse(-46, -20, 26, 30), fill: 'white' }] },
+    { id: 'eyeR', groupId: 'face-grp', shapes: [{ d: ellipse(46, -20, 26, 30), fill: 'white' }] },
+    { groupId: 'face-grp', clip: 'eyeL', m: { ...look, k: 1.6 }, shapes: [{ d: ellipse(-40, -14, 15), fill: 'ink', line: false }] },
+    { groupId: 'face-grp', clip: 'eyeR', m: { ...look, k: 1.6 }, shapes: [{ d: ellipse(52, -14, 15), fill: 'ink', line: false }] },
     glow('bot', [150, -118], 26, sparkle(16)),
     glow('bot', [-156, -60], 16, sparkle(92)),
   ],
@@ -348,22 +332,23 @@ export const toggle: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
+    { id: 'track-grp', name: 'Toggle Track Group', isGroup: true, p: [250, 262], tilt: FACE, // bob repeats every 160 frames, so it rests 20 frames to fit this 180 frame loop
+      m: { ...bob, loop: 180 }, shapes: [] },
     {
       id: 'track',
-      p: [250, 262],
-      tilt: FACE,
-      // bob repeats every 160 frames, so it rests 20 frames to fit this 180 frame loop
-      m: { ...bob, loop: 180 },
+      name: 'Toggle Track',
+      groupId: 'track-grp',
+      p: [0, 0],
       shapes: [{ d: pill(-134, -58, 268, 116), fill: 'white', depth: 1 }, { d: pill(-114, -38, 228, 76), fill: 'grey' }],
     },
     {
-      parent: 'track',
+      groupId: 'track-grp',
       a: [-114, 0],
       p: [-114, 0],
       m: { s: [[20, [36, 100], [0.8, 0, 0.2, 1]], [80, [100, 100], 0], [120, [100, 100], [0.8, 0, 0.2, 1]], [180, [36, 100]]] },
       shapes: [{ d: pill(-114, -38, 228, 76), fill: 'ok' }],
     },
-    { parent: 'track', m: slide([148, 0], 20, 40), shapes: [{ d: ellipse(-74, 0, 48), fill: 'white', depth: 0.8 }, { d: ellipse(-74, 0, 28) }] },
+    { groupId: 'track-grp', m: slide([148, 0], 20, 40), shapes: [{ d: ellipse(-74, 0, 48), fill: 'white', depth: 0.8 }, { d: ellipse(-74, 0, 28) }] },
   ],
 }
 
@@ -427,9 +412,10 @@ export const play: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'base', p: [250, 278], tilt: FACE, shapes: [{ d: rect(-132, -118, 264, 236, 48), fill: 'white', depth: 1 }] },
+    { id: 'base-grp', name: 'Play Base Group', isGroup: true, p: [250, 278], tilt: FACE, shapes: [] },
+    { id: 'base', name: 'Play Base', groupId: 'base-grp', p: [0, 0], shapes: [{ d: rect(-132, -118, 264, 236, 48), fill: 'white', depth: 1 }] },
     {
-      parent: 'base',
+      groupId: 'base-grp',
       m: press,
       shapes: [{ d: ellipse(0, -8, 80), fill: 'ok', depth: 1.6 }, { d: poly([[-20, -42], [38, -8], [-20, 26]], 7), fill: 'white' }],
     },
@@ -498,11 +484,11 @@ export const pen: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'desk', p: [224, 322], shapes: [] },
-    { parent: 'desk', tilt: FACE, shapes: [{ d: rect(-116, -116, 232, 232, 28), fill: 'tint', depth: 1 }] },
-    { parent: 'desk', tilt: FACE, a: [0, 4], p: onFace(FACE, [0, 4]), m: twinkle(148, true), shapes: INK },
+    { id: 'desk', name: 'Pen Desk Group', isGroup: true, p: [224, 322], shapes: [] },
+    { groupId: 'desk', tilt: FACE, shapes: [{ d: rect(-116, -116, 232, 232, 28), fill: 'tint', depth: 1 }] },
+    { groupId: 'desk', tilt: FACE, a: [0, 4], p: onFace(FACE, [0, 4]), m: twinkle(148, true), shapes: INK },
     {
-      parent: 'desk',
+      groupId: 'desk',
       p: NIB,
       r: TURN,
       shapes: [
@@ -526,10 +512,11 @@ export const mailbox: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'mail', a: [0, 150], p: [250, 392], m: jolt([-4, 10]), shapes: [] },
-    { parent: 'mail', tilt: BOX, shapes: [{ d: rect(-18, 40, 36, 150, 6), fill: 'grey', depth: 0.8 }] },
+    { id: 'mail', name: 'Mailbox Group', isGroup: true, a: [0, 150], p: [250, 392], m: jolt([-4, 10]), shapes: [] },
+    { groupId: 'mail', tilt: BOX, shapes: [{ d: rect(-18, 40, 36, 150, 6), fill: 'grey', depth: 0.8 }] },
+    { id: 'box-grp', name: 'Mailbox Box Group', groupId: 'mail', isGroup: true, p: [0, 0], tilt: BOX, shapes: [] },
     {
-      parent: 'box',
+      groupId: 'box-grp',
       a: [70, 0],
       p: [70, 0],
       m: slide([56, 0], 24, 72, 40),
@@ -537,15 +524,16 @@ export const mailbox: Icon = {
     },
     {
       id: 'box',
-      parent: 'mail',
-      tilt: BOX,
+      name: 'Mailbox Box',
+      groupId: 'box-grp',
+      p: [0, 0],
       shapes: [
         { d: poly([[-136, -96], [136, -96], [136, 56], [-136, 56]], [72, 72, 10, 10]), fill: 'deep', depth: 1 },
         { d: poly([[96, -96], [136, -96], [136, 56], [96, 56]], [0, 72, 10, 0]), fill: 'main', depth: 1 },
       ],
     },
     {
-      parent: 'box',
+      groupId: 'box-grp',
       a: [-60, -10],
       p: [-60, -10],
       r: 84,
@@ -568,9 +556,9 @@ export const headphones: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'set', a: [0, 120], p: [250, 392], m: wobble, shapes: [] },
+    { id: 'set', name: 'Headphones Group', isGroup: true, a: [0, 120], p: [250, 392], m: wobble, shapes: [] },
     {
-      parent: 'set',
+      groupId: 'set',
       tilt: [-12, 24],
       shapes: [
         { d: BAND, fill: 'deep', depth: 0.8 },
@@ -580,8 +568,8 @@ export const headphones: Icon = {
         ]),
       ],
     },
-    { parent: 'set', a: [150, -110], p: [150, -110], m: [twinkle(20), twinkle(100, true)], shapes: NOTE(150, -110) },
-    { parent: 'set', a: [-150, -70], p: [-150, -70], m: [twinkle(60), twinkle(132, true)], shapes: NOTE(-150, -70) },
+    { groupId: 'set', a: [150, -110], p: [150, -110], m: [twinkle(20), twinkle(100, true)], shapes: NOTE(150, -110) },
+    { groupId: 'set', a: [-150, -70], p: [-150, -70], m: [twinkle(60), twinkle(132, true)], shapes: NOTE(-150, -70) },
   ],
 }
 
@@ -594,9 +582,9 @@ export const trophy: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'cup', p: [250, 266], m: hop, shapes: [] },
+    { id: 'cup', name: 'Trophy Cup Group', isGroup: true, p: [250, 266], m: hop, shapes: [] },
     {
-      parent: 'cup',
+      groupId: 'cup',
       tilt: FACE,
       shapes: [
         ...[-1, 1].map((side): Shape => ({ d: ring(side * 88, -60, 44, 24), fill: 'gold', depth: 0.6 })),
@@ -624,11 +612,11 @@ export const camera: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'cam', a: [0, 100], p: [250, 366], m: { ...sway, k: 0.6 }, shapes: [] },
-    { parent: 'cam', tilt: FACE, shapes: [{ d: rect(-64, -126, 128, 50, 14), fill: 'deep', depth: 0.8 }] },
-    { parent: 'cam', a: SHUTTER, p: SHUTTER, m: { ...press, k: 0.35 }, tilt: FACE, shapes: [{ d: pill(70, -118, 46, 28), fill: 'hot', depth: 0.6 }] },
+    { id: 'cam', name: 'Camera Group', isGroup: true, a: [0, 100], p: [250, 366], m: { ...sway, k: 0.6 }, shapes: [] },
+    { groupId: 'cam', tilt: FACE, shapes: [{ d: rect(-64, -126, 128, 50, 14), fill: 'deep', depth: 0.8 }] },
+    { groupId: 'cam', a: SHUTTER, p: SHUTTER, m: { ...press, k: 0.35 }, tilt: FACE, shapes: [{ d: pill(70, -118, 46, 28), fill: 'hot', depth: 0.6 }] },
     {
-      parent: 'cam',
+      groupId: 'cam',
       tilt: FACE,
       shapes: [
         { d: rect(-146, -90, 292, 192, 32), fill: 'deep', depth: 1 },
@@ -652,8 +640,8 @@ export const pin: Icon = {
   line: LINE,
   extrude: [-3, 16],
   layers: [
-    { id: 'drop', a: [0, 118], p: [250, 362], m: { ...hop, at: 20 }, shapes: [] },
-    { parent: 'drop', shapes: [{ d: PIN, fill: 'main', depth: 1, edges: [[0, 118]] }, { d: ring(0, -42, 46, 22), fill: 'white', depth: 0.3 }] },
+    { id: 'drop', name: 'Pin Group', isGroup: true, a: [0, 118], p: [250, 362], m: { ...hop, at: 20 }, shapes: [] },
+    { groupId: 'drop', shapes: [{ d: PIN, fill: 'main', depth: 1, edges: [[0, 118]] }, { d: ring(0, -42, 46, 22), fill: 'white', depth: 0.3 }] },
     glow('drop', [104, -128], 26, sparkle(48)),
     glow('drop', [-118, -20], 16, sparkle(110)),
   ],
@@ -667,10 +655,10 @@ export const cloud: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'sky', p: [250, 270], m: float, shapes: [] },
-    { parent: 'sky', tilt: FACE, shapes: [{ d: CLOUD, fill: 'white', depth: 1 }] },
+    { id: 'sky', name: 'Cloud Group', isGroup: true, p: [250, 270], m: float, shapes: [] },
+    { groupId: 'sky', tilt: FACE, shapes: [{ d: CLOUD, fill: 'white', depth: 1 }] },
     {
-      parent: 'sky',
+      groupId: 'sky',
       tilt: FACE,
       m: slide([0, -40], 30, 50, 50),
       shapes: [{ d: poly([[0, -66], [52, -10], [22, -10], [22, 50], [-22, 50], [-22, -10], [-52, -10]], 6), fill: 'ok', depth: 0.8 }],
@@ -686,9 +674,9 @@ export const bulb: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'lamp', a: [0, 120], p: [250, 372], m: hop, shapes: [] },
+    { id: 'lamp', name: 'Bulb Group', isGroup: true, a: [0, 120], p: [250, 372], m: hop, shapes: [] },
     {
-      parent: 'lamp',
+      groupId: 'lamp',
       tilt: FACE,
       shapes: [
         { d: BULB, fill: 'gold', depth: 1 },
@@ -716,11 +704,13 @@ export const battery: Icon = {
   line: LINE,
   extrude: EXT,
   layers: [
-    { id: 'cell', p: [244, 262], m: float, shapes: [] },
+    { id: 'cell', name: 'Battery Cell Group', isGroup: true, p: [244, 262], m: float, shapes: [] },
+    { id: 'batt-grp', name: 'Battery Body Group', groupId: 'cell', isGroup: true, p: [0, 0], tilt: FACE, shapes: [] },
     {
       id: 'batt',
-      parent: 'cell',
-      tilt: FACE,
+      name: 'Battery Body',
+      groupId: 'batt-grp',
+      p: [0, 0],
       shapes: [
         { d: rect(116, -28, 26, 56, 8), fill: 'grey', depth: 0.8 },
         { d: rect(-132, -66, 252, 132, 26), fill: 'white', depth: 1 },
@@ -728,10 +718,10 @@ export const battery: Icon = {
       ],
     },
     ...[0, 1, 2, 3].map(
-      (i): Layer => ({ parent: 'batt', a: CELL(i), p: CELL(i), m: [twinkle(14 + i * 14), twinkle(132 + i * 6, true)], shapes: [{ d: rect(CELL(i)[0] - 22, -38, 44, 76, 8), fill: 'ok', depth: 0.3 }] }),
+      (i): Layer => ({ groupId: 'batt-grp', a: CELL(i), p: CELL(i), m: [twinkle(14 + i * 14), twinkle(132 + i * 6, true)], shapes: [{ d: rect(CELL(i)[0] - 22, -38, 44, 76, 8), fill: 'ok', depth: 0.3 }] }),
     ),
     {
-      parent: 'batt',
+      groupId: 'batt-grp',
       a: [-6, 0],
       p: [-6, 0],
       m: [twinkle(70), twinkle(124, true)],
@@ -743,13 +733,18 @@ export const battery: Icon = {
 
 export const ICONS: ReadonlyArray<Icon> = [pen, folder, heart, coins, bell, calendar, padlock, gift, plane, search, chat, phone, toggle, streak, notes, play, mailbox, headphones, trophy, camera, pin, cloud, bulb, battery]
 
-/** Every designed sticker, in sheet order. */
-export const TEMPLATE_ICONS: ReadonlyArray<Icon> = ICONS
+/**
+ * Every designed sticker, in sheet order, with each layer tagged with the motion
+ * preset its track corresponds to. The templates animate with hand-written
+ * tracks, so without this the editor showed every layer as "custom".
+ */
+export const TEMPLATE_ICONS: ReadonlyArray<Icon> = ICONS.map(annotatePresets)
 
 /** Finds a designed sticker by name or slug, case-insensitive. */
 export function getTemplate(name: string): Icon | undefined {
   const key = name.trim().toLowerCase().replace(/[\s_]+/g, '-')
-  return ICONS.find((icon) => icon.name === key)
+  const icon = ICONS.find((candidate) => candidate.name === key)
+  return icon ? annotatePresets(icon) : undefined
 }
 
 /** Ids the AI and the starter panel can request. */

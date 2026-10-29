@@ -5,9 +5,8 @@ import type { Icon, Layer, Motion, Vec } from './fun'
 const LINE = 5
 const { tilt: FACE, extrude: EXT } = VIEWS.right
 
-const glow = (parent: string, p: Vec, r: number, m: Motion | ReadonlyArray<Motion>, extra: { ip?: number; op?: number } = {}): Layer => ({
-  parent,
-  groupId: parent,
+const glow = (groupId: string, p: Vec, r: number, m: Motion | ReadonlyArray<Motion>, extra: { ip?: number; op?: number } = {}): Layer => ({
+  groupId,
   a: p,
   p,
   m,
@@ -34,25 +33,33 @@ export const padlock: Icon = {
       shapes: [],
     },
     {
+      id: 'body-grp',
+      name: 'Padlock Body Group',
+      groupId: 'lock',
+      isGroup: true,
+      p: [0, 0],
+      tilt: FACE,
+      tiltFromView: true,
+      shapes: [],
+    },
+    {
       id: 'shackle',
       name: 'Steel Shackle',
-      groupId: 'lock',
+      groupId: 'body-grp',
       motionPreset: 'shackle',
       a: [-58, -62],
       p: [-58, -62],
       r: 15,
       tilt: FACE,
       tiltFromView: true,
-      parent: 'body',
       m: shackle,
       shapes: [{ d: SHACKLE, fill: 'tint', depth: 0.7 }],
     },
     {
       id: 'body',
       name: 'Padlock Body',
-      groupId: 'lock',
-      tilt: FACE,
-      tiltFromView: true,
+      groupId: 'body-grp',
+      p: [0, 0],
       shapes: [
         { d: rect(-112, -80, 224, 176, 24), fill: 'main', depth: 1 },
         { d: ellipse(0, 8, 36, 50), fill: 'white', depth: 0.25 },
@@ -150,17 +157,16 @@ export const coins: Icon = {
   layers: [
     { id: 'coin-bot1', name: 'Bottom Coin 1', p: [252, 352], r: -10, shapes: [{ d: COIN(0, 0), fill: 'gold', depth: 1 }] },
     { id: 'coin-bot2', name: 'Bottom Coin 2', p: [246, 318], r: -10, shapes: [{ d: COIN(0, 0), fill: 'gold', depth: 1 }] },
+    { id: 'coin-grp', name: 'Springing Coin Group', isGroup: true, motionPreset: 'bounce', p: [240, 278], r: -10, m: bounce, shapes: [] },
     {
       id: 'coin',
       name: 'Springing Coin',
-      motionPreset: 'bounce',
-      p: [240, 278],
-      r: -10,
-      m: bounce,
+      groupId: 'coin-grp',
+      p: [0, 0],
       shapes: [{ d: COIN(0, 0), fill: 'gold', depth: 1 }, { d: ellipse(0, 0, 86, 58) }, { d: star(0, 2, 40, 0.46, 5, 4), fill: 'ink', line: false }],
     },
-    { ...glow('coin', [96, -66], 26, glint(2, 98)), id: 'cg1', name: 'Glint 1', motionPreset: 'glint' },
-    { ...glow('coin', [-104, -48], 26, glint(6, 122)), id: 'cg2', name: 'Glint 2', motionPreset: 'glint' },
+    { ...glow('coin-grp', [96, -66], 26, glint(2, 98)), id: 'cg1', name: 'Glint 1', motionPreset: 'glint' },
+    { ...glow('coin-grp', [-104, -48], 26, glint(6, 122)), id: 'cg2', name: 'Glint 2', motionPreset: 'glint' },
   ],
 }
 

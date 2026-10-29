@@ -17,8 +17,9 @@ import { applyAIActionsToDoc } from '@/lib/ai/actions';
 import type { AIAction, AIApplyOutcome } from '@/lib/ai/actions';
 import { ellipse, ensureLayerIds, PALETTES, rect, spark, VIEWS } from '@/lib/funIsometric/fun';
 import type { Icon, Layer, Palette, View } from '@/lib/funIsometric/fun';
+import { findShape, shapeLayer } from '@/lib/funIsometric/shapes';
 import { blankProject, padlock } from '@/lib/funIsometric/icons';
-import { createMotion } from '@/lib/funIsometric/presets';
+import { createMotion, annotatePresets } from '@/lib/funIsometric/presets';
 import {
   DEFAULT_FACING,
   DEFAULT_OUTLINE,
@@ -33,7 +34,15 @@ import type { StudioDoc } from '@/lib/projectFile';
  * the per-layer controls (hide, lock, delete, reorder) work on every design,
  * including the vendored stickers that omit ids on decorative layers.
  */
-const cloneIcon = (icon: Icon): Icon => ensureLayerIds(JSON.parse(JSON.stringify(icon)) as Icon);
+/**
+ * Brings a loaded or pasted icon up to the studio's expectations: every layer
+ * gets a stable id, and a layer whose hand-written track matches a known motion
+ * preset is tagged with that preset so the sidebar and timeline can name it.
+ * Older projects saved before presets were tagged are migrated here.
+ */
+const normalizeIcon = (icon: Icon): Icon => annotatePresets(ensureLayerIds(icon));
+
+const cloneIcon = (icon: Icon): Icon => normalizeIcon(JSON.parse(JSON.stringify(icon)) as Icon);
 
 const defaultDoc = (): StudioDoc => ({
   icon: cloneIcon(padlock),
@@ -64,7 +73,7 @@ export interface StudioActions {
   applyMotion: (id: string, preset: string) => void;
   createGroup: () => void;
   setLayerGroup: (id: string, groupId: string | undefined) => void;
-  addShape: (type: 'rect' | 'circle' | 'spark') => void;
+  addShape: (shapeId: string) => void;
   deleteLayer: (id: string) => void;
   deleteLayers: (ids: string[]) => void;
   changePalette: (paletteId: string) => void;
@@ -163,7 +172,7 @@ export function useStudioState(clock: PlaybackClock): StudioState {
     if (!draft) return;
     // Restoring the autosaved draft after hydration is a deliberate one-time
     // external-store sync; reading localStorage during render would desync SSR.
-    const restored = { ...draft, icon: ensureLayerIds(draft.icon) };
+    const restored = { ...draft, icon: normalizeIcon(draft.icon) };
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistory(createHistory(restored, 'Restored draft'));
     const initialLayer = firstVisualLayer(restored.icon);
@@ -275,7 +284,6 @@ export function useStudioState(clock: PlaybackClock): StudioState {
 
           if (targetGroupId !== undefined && !moved.isGroup) {
             moved.groupId = targetGroupId || undefined;
-            if (!targetGroupId) moved.parent = undefined;
           }
 
           layers.splice(toIndex, 0, moved);
@@ -338,9 +346,7 @@ export function useStudioState(clock: PlaybackClock): StudioState {
         (icon) => ({
           ...icon,
           layers: icon.layers.map((layer) =>
-            layer.id === id
-              ? { ...layer, groupId, parent: groupId ? layer.parent : undefined }
-              : layer
+            layer.id === id ? { ...layer, groupId } : layer
           ),
         }),
         { label: groupId ? 'Add layer to group' : 'Remove layer from group' }
@@ -350,29 +356,50 @@ export function useStudioState(clock: PlaybackClock): StudioState {
   );
 
   const addShape = useCallback(
-    (type: 'rect' | 'circle' | 'spark') => {
+    (shapeId: string) => {
+      const def = findShape(shapeId);
       const layerId = nextId('layer');
       updateDoc(
         (current) => {
-          const shape =
-            type === 'circle' ? ellipse(0, 0, 50, 40) : type === 'spark' ? spark(0, 0, 32) : rect(-50, -50, 100, 100, 12);
           const selected = current.icon.layers.find((layer) => layer.id === selectedLayerId);
           const groupId = selected?.groupId;
 
-          const layer: Layer = {
-            id: layerId,
-            name: `New ${type}`,
-            p: [250, 250],
-            tilt: VIEWS[current.facing].tilt,
-            tiltFromView: true,
-            groupId,
-            isGroupLeader: false,
-            shapes: [{ d: shape, fill: 'main', depth: type === 'spark' ? 0 : 0.8 }],
-          };
+          // A known catalogue shape reuses the exact layer the picker previews;
+          // unknown ids fall back to the legacy primitives so nothing breaks.
+          const layer: Layer = def
+            ? {
+                ...shapeLayer(layerId, def.label, def, {
+                  tilt: VIEWS[current.facing].tilt,
+                  fill: 'main',
+                  at: [250, 250],
+                }),
+                groupId,
+              }
+            : {
+                id: layerId,
+                name: shapeId,
+                p: [250, 250],
+                tilt: VIEWS[current.facing].tilt,
+                tiltFromView: true,
+                groupId,
+                isGroupLeader: false,
+                shapes: [
+                  {
+                    d:
+                      shapeId === 'circle'
+                        ? ellipse(0, 0, 50, 40)
+                        : shapeId === 'spark'
+                          ? spark(0, 0, 32)
+                          : rect(-50, -50, 100, 100, 12),
+                    fill: 'main',
+                    depth: shapeId === 'spark' ? 0 : 0.8,
+                  },
+                ],
+              };
 
           return { ...current, icon: { ...current.icon, layers: [...current.icon.layers, layer] } };
         },
-        { label: `Add ${type}` }
+        { label: `Add ${def?.label ?? shapeId}` }
       );
       setSelectedLayerIds([layerId]);
     },

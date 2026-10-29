@@ -931,12 +931,12 @@ describe('sticker library', () => {
     }
   });
 
-  it('normalises every layer to a unique id, keeping parent links intact', () => {
+  it('normalises every layer to a unique id, keeping group links intact', () => {
     for (const icon of TEMPLATE_ICONS) {
       const before = new Set(icon.layers.map((layer) => layer.id).filter(Boolean) as string[]);
-      // Parents must already resolve, or assigning fresh ids could orphan children.
+      // Groups must already resolve, or assigning fresh ids could orphan children.
       for (const layer of icon.layers) {
-        if (layer.parent) expect(before.has(layer.parent)).toBe(true);
+        if (layer.groupId) expect(before.has(layer.groupId)).toBe(true);
       }
 
       const withIds = ensureLayerIds(icon);
