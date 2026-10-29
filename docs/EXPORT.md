@@ -31,6 +31,27 @@ const frame = Math.min(sourceFrames - 1, Math.round((index * sourceFrames) / cou
 - FPS is clamped to 1–60 and the source frame count to at least 1.
 - `loopDurationSeconds()` and `formatDuration()` use the 60 FPS source clock scaled by the speed multiplier.
 
+### Minimum duration (6 seconds)
+
+Short designs (for example a 123-frame sticker, about 2.05 s) would otherwise
+export as a very short clip. `planLoop()` repeats the whole animation cycle
+back-to-back until the clip lasts at least `MIN_EXPORT_SECONDS` (6 s):
+
+```ts
+const cycleCount = Math.ceil(6 / cycleSeconds); // at least 1
+const frames = planFrames(icon.frames * cycleCount, fps, speed);
+```
+
+- The original motion speed and easing are preserved — the cycle is repeated, never
+  stretched, so gestures do not slow down.
+- `repeatIcon()` (in `repeat.ts`) tiles every keyframe track — motion tracks and
+  shape `d`/`trim` tracks alike — by the design's own length, so the seam between
+  repetitions is seamless instead of restarting mid-ease. Immutable data only; the
+  rendering engine is untouched.
+- Constant values (a fixed `p`, a static shape `d`, a fixed `extrude`) are left as is.
+- The export modal footer shows the real duration and frame count, including the
+  number of cycles.
+
 Every encoder renders through `renderFrameToCanvas()` in `render.ts`, which
 paints an offscreen canvas at the requested width and height with the selected
 background.

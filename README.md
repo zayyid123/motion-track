@@ -92,7 +92,8 @@ timeline's hide / lock / delete / reorder controls keep working.
   motion, view, outline, naming) applied as one undo step.
 - **Transactional undo/redo** with coalesced slider edits and a 50-entry history.
 - **Autosave and versioned project files** (v2) with legacy icon-JSON migration.
-- **Client-side export** — GIF, MP4 and ProRes 4444 MOV with alpha.
+- **Client-side export** — GIF, MP4 and ProRes 4444 MOV with alpha, each padded
+  with whole animation cycles to a minimum 6-second seamless loop.
 - **Accessibility basics** — focus-trapped modals, labelled controls, visible
   focus rings, reduced-motion handling, toasts, and an error boundary.
 
@@ -204,6 +205,11 @@ the format matrix and limitations.
 The first MOV export downloads the ffmpeg core from unpkg (about 31 MB). MP4
 export requires WebCodecs for a true MP4; older browsers fall back to
 MediaRecorder and may produce WebM.
+
+Every export repeats the animation cycle back-to-back until the clip lasts at
+least 6 seconds. The cycle is repeated rather than stretched, so motion keeps its
+speed, and keyframe tracks are tiled so the seam between repetitions stays
+seamless.
 
 ## Browser support
 

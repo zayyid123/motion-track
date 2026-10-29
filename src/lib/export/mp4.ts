@@ -1,7 +1,8 @@
 import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
 import type { Icon, Palette } from '@/lib/funIsometric/fun';
-import { planFrames } from './frames';
+import { planLoop } from './frames';
 import { renderFrameToCanvas } from './render';
+import { repeatIcon } from './repeat';
 import { assertNotCancelled, ExportCancelledError } from './types';
 import type { ExportResult, ProgressFn } from './types';
 
@@ -68,12 +69,14 @@ async function exportWithWebCodecs(
   });
 
   try {
-    const frames = planFrames(icon.frames || 180, fps, speed);
+    const plan = planLoop(icon.frames || 180, fps, speed);
+    const loopIcon = repeatIcon(icon, plan.cycleCount);
+    const frames = plan.frames;
     const duration = Math.round(1_000_000 / fps);
 
     for (let index = 0; index < frames.length; index += 1) {
       assertNotCancelled(signal);
-      const canvas = renderFrameToCanvas(icon, palette, frames[index], {
+      const canvas = renderFrameToCanvas(loopIcon, palette, frames[index], {
         width,
         height,
         background,
@@ -160,14 +163,16 @@ async function exportWithMediaRecorder(
     recorder.onerror = () => reject(new Error('Video recorder failed.'));
   });
 
-  const frames = planFrames(icon.frames || 180, fps, speed);
+  const plan = planLoop(icon.frames || 180, fps, speed);
+  const loopIcon = repeatIcon(icon, plan.cycleCount);
+  const frames = plan.frames;
   const frameDuration = 1000 / fps;
 
   try {
     recorder.start();
     for (let index = 0; index < frames.length; index += 1) {
       assertNotCancelled(signal);
-      const rendered = renderFrameToCanvas(icon, palette, frames[index], {
+      const rendered = renderFrameToCanvas(loopIcon, palette, frames[index], {
         width,
         height,
         background,

@@ -260,3 +260,50 @@ export async function assertPublicResolution(url: URL): Promise<void> {
     }
   }
 }
+
+/**
+ * Maps a failed upstream `fetch` to an actionable, sanitized message.
+ *
+ * The relay used to collapse every network failure into "Failed to reach the AI
+ * provider.", which left the operator guessing between a down gateway, a typo in
+ * the Base URL, a DNS problem, or a TLS error. This keeps the generic wording for
+ * logs but appends the underlying cause code and a short, non-leaky hint.
+ *
+ * Only the error's `code`/`name` and a trimmed message are ever surfaced — never
+ * request headers or the API key.
+ */
+export function describeFetchFailure(error: unknown, url: URL): string {
+  const err = error as { cause?: { code?: string }; code?: string; name?: string; message?: string };
+  const code = err?.cause?.code ?? err?.code ?? '';
+  const isLoopback =
+    url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1' || url.hostname === '[::1]';
+
+  switch (code) {
+    case 'ECONNREFUSED':
+      return isLoopback
+        ? 'Failed to reach the AI provider: nothing is listening at the configured address. Start your local AI server or fix the Base URL in Settings.'
+        : 'Failed to reach the AI provider: the connection was refused. Check the Base URL and that the provider is running.';
+    case 'ENOTFOUND':
+    case 'EAI_AGAIN':
+      return 'Failed to reach the AI provider: the host name could not be resolved. Check the Base URL in Settings.';
+    case 'ETIMEDOUT':
+    case 'UND_ERR_CONNECT_TIMEOUT':
+    case 'UND_ERR_HEADERS_TIMEOUT':
+    case 'UND_ERR_BODY_TIMEOUT':
+      return 'Failed to reach the AI provider: the connection timed out. Check the network, the host, or switch to direct mode.';
+    case 'CERT_HAS_EXPIRED':
+    case 'UNABLE_TO_VERIFY_LEAF_SIGNATURE':
+    case 'DEPTH_ZERO_SELF_SIGNED_CERT':
+    case 'SELF_SIGNED_CERT_IN_CHAIN':
+      return 'Failed to reach the AI provider: the TLS certificate was rejected. Use a valid certificate or a trusted endpoint.';
+    case 'ECONNRESET':
+      return 'Failed to reach the AI provider: the connection was reset. Try again, or check the provider.';
+    default:
+      break;
+  }
+
+  const detail = typeof err?.message === 'string' ? err.message.trim() : '';
+  const reason = detail && detail !== 'fetch failed' ? detail : code || err?.name || 'network error';
+  const safe = reason.replace(/sk-[A-Za-z0-9_-]{8,}/g, 'sk-***').replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer ***').slice(0, 200);
+  return `Failed to reach the AI provider (${safe}). Check the Base URL, the host, and your network.`;
+}

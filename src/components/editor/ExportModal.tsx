@@ -8,8 +8,7 @@ import {
   exportGIF,
   exportMOV,
   exportMP4,
-  formatDuration,
-  planFrames,
+  planLoop,
 } from '@/lib/export';
 import type { ExportFormat, ExportProgress, ExportResult } from '@/lib/export';
 import { Modal } from '@/components/ui/Modal';
@@ -123,6 +122,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   }, [format, backgroundId, customColor]);
 
   const totalFrames = icon.frames || 180;
+  // Every export is padded with whole animation cycles to reach a minimum
+  // duration, so the footer reflects the frames that are actually encoded.
+  const plan = useMemo(() => planLoop(totalFrames, fps, exportSpeed), [totalFrames, fps, exportSpeed]);
 
   // Object URLs must be revoked when replaced or when the modal unmounts.
   useEffect(() => {
@@ -233,7 +235,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       footer={
         <div className="flex items-center justify-between gap-2">
           <span className="hidden text-[10px] font-mono text-slate-500 sm:block">
-            {formatDuration(totalFrames, exportSpeed)} loop · {planFrames(totalFrames, fps, exportSpeed).length} frames at {fps} fps ({exportSpeed}x speed)
+            {plan.totalSeconds.toFixed(2)}s loop · {plan.frames.length} frames at {fps} fps (
+            {exportSpeed}x · {plan.cycleCount} cycle{plan.cycleCount > 1 ? 's' : ''})
           </span>
           <div className="flex items-center gap-2">
             <button

@@ -3,6 +3,36 @@
 Motion-Track talks to any OpenAI-compatible chat endpoint. Two transports are
 available, and the safe one is the default.
 
+## Configuring a provider
+
+AI Settings (`SettingsModal.tsx`) keeps the connection fully free-form — Base
+URL, API key and model can be anything. A **provider preset dropdown** (see
+`src/lib/ai/providers.ts`) exists only to remove the most common setup mistake
+(a typo in the Base URL):
+
+- Picking a preset prefills the Base URL and a sensible model. Both stay
+  editable, and a **Custom / other** entry leaves them blank for any
+  OpenAI-compatible gateway.
+- Presets include public providers (OpenAI, Anthropic, Gemini, Groq, DeepSeek,
+  OpenRouter, xAI, Mistral, Together, Fireworks, Perplexity) and local ones
+  (Ollama, LM Studio). Local presets mark the key as optional.
+- The Base URL is matched back to a preset on load (`detectPresetId`), so an
+  existing configuration shows the right entry.
+
+Nothing in the preset table is required at runtime; it is pure data.
+
+### Test connection
+
+A **Test connection** button sends one minimal chat request (`max_tokens: 8`,
+`temperature: 0`, no system prompt) through the current transport and reports a
+pass/fail panel before the settings are saved. `testConnection()` in
+`src/lib/ai/transport.ts` never throws — it returns:
+
+- success with latency, model and the model's reply, or
+- a mapped failure: `401/403` → key problem, `404` → wrong Base URL or model,
+  `429` → throttling, `5xx` → provider error, or a browser-level network message
+  (wrong Base URL, CORS, or `http://` mixed content on an `https://` page).
+
 ## Direct mode (default)
 
 ```text
@@ -135,8 +165,10 @@ AI_PROXY_ALLOWED_HOSTS="api.openai.com,api.groq.com,*.example.com"
 Self-hosted or local OpenAI-compatible gateways that expose plain HTTP can be relayed. Browsers normally block them with CORS or mixed-content policies, but the relay can forward requests directly. Traffic between the relay and an HTTP gateway is unencrypted; use only on trusted networks. Set `AI_PROXY_ALLOW_HTTP=0` if you wish to enforce HTTPS only.
 
 - `AI_PROXY_ALLOWED_HOSTS` must be explicit; `*` never enables HTTP.
-- Private, loopback, link-local, and internal hostnames remain blocked.
-- Credentials in the URL, invalid ports, and redirects remain blocked.
+- Loopback and private endpoints are allowed by default so local gateways work
+  (`assertSafeEndpoint` only rejects them when `allowPrivate: false` is passed,
+  which the route does not do). Credentials in the URL, invalid ports, and
+  redirects are always blocked.
 - The API key and response travel **unencrypted** between the server and that
   host. Use this only for a gateway you control, on a trusted network, and
   prefer HTTPS whenever the provider supports it.
@@ -163,6 +195,32 @@ subject to the 30 s timer because the stream can legitimately run longer.
 - It is never logged. Upstream errors are sanitized: `sk-…` tokens and
   `Bearer …` values are redacted and messages are truncated to 300 characters.
 - Browser console logs contain only the sanitized upstream failure reason.
+
+## Troubleshooting
+
+If the assistant shows **“Failed to reach the AI provider.”**, the relay reached
+the guard but the outbound `fetch()` failed on the network. The message now names
+the cause via `describeFetchFailure()` in `src/lib/ai/proxyGuard.ts`:
+
+| Message fragment | Cause | Fix |
+| --- | --- | --- |
+| `nothing is listening at the configured address` | Loopback endpoint (localhost/127.0.0.1) with no server on that port | Start the local gateway (LM Studio, Ollama, …) or correct the port in **AI Settings** |
+| `the connection was refused` | Remote host refused the connection | Check the Base URL and that the provider is up |
+| `the host name could not be resolved` | DNS failure (`ENOTFOUND`/`EAI_AGAIN`) | Check the Base URL for a typo |
+| `the connection timed out` | Connect/headers/body timeout | Check the network or switch to direct mode |
+| `the TLS certificate was rejected` | Invalid/self-signed certificate | Use a valid certificate or a trusted endpoint |
+
+Notes:
+
+- The client appends `/chat/completions` to the Base URL, so a gateway that only
+  serves `/v1/chat/completions` needs a Base URL ending in `/v1`
+  (for example `http://localhost:1234/v1`).
+- A **502** means the relay could not reach the upstream. A **4xx** is forwarded
+  from the provider (for example a 401 for a bad API key) and its message is
+  passed through.
+- In **direct mode** the browser hides the cause; the UI points at the usual
+  suspects (Base URL, provider CORS, or an `http://` gateway blocked by
+  mixed-content on an `https://` page — use relay mode for that case).
 
 ## Deployment caveats
 
